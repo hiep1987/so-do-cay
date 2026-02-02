@@ -1,0 +1,41 @@
+\begin{tikzpicture}[
+	% Tùy chỉnh kiểu cho các node (điểm tròn)
+	dot/.style={circle, fill=#1, inner sep=0pt, minimum size=6pt},
+	% Tùy chỉnh khoảng cách cây
+	level 1/.style={sibling distance=5cm, level distance=3cm},
+	level 2/.style={sibling distance=2.5cm, level distance=3cm},
+	% Tùy chỉnh đường nối
+	edge from parent/.style={draw, thick, black},
+	% Tùy chỉnh nhãn trên đường nối
+	edge label/.style={midway, fill=white, inner sep=1pt, font=\small}
+	]
+	
+	% --- Gốc O (Màu cam) ---
+	\node[dot=orange!80, label=above:{\bfseries Gốc O}] {}
+	% --- Nhánh trái (A) ---
+	child {
+		node[dot=cyan!50, label=left:{$A$}] {}
+		child {
+			node[dot=pink!90, label=below:{$B$}] {}
+			edge from parent node[left=5pt] {0,3}
+		}
+		child {
+			node[dot=violet!80, label=below:{$\overline{B}$}] {}
+			edge from parent node[right=5pt] {0,7}
+		}
+		edge from parent node[left=5pt] {0,4}
+	}
+	% --- Nhánh phải (Not A) ---
+	child {
+		node[dot=green!60!black, label=right:{$\overline{A}$}] {}
+		child {
+			node[dot=pink!90, label=below:{$B$}] {}
+			edge from parent node[left=5pt] {0,4}
+		}
+		child {
+			node[dot=violet!80, label=below:{$\overline{B}$}] {}
+			edge from parent node[right=5pt] {0,6}
+		}
+		edge from parent node[right=5pt] {0,6}
+	};
+\end{tikzpicture}
