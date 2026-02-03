@@ -41,7 +41,7 @@ export function TreeCanvas() {
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
   // Store state
-  const { nodes, edges, settings, selectedId, setSelected, setDiagram } = useTreeStore();
+  const { nodes, edges, settings, selectedId, setSelected, setDiagram, addNode, isPreviewMode } = useTreeStore();
   const positions = useTreeLayout();
 
   // Load sample data on mount
@@ -98,6 +98,32 @@ export function TreeCanvas() {
     setIsDragging(false);
   }, []);
 
+  // Background click to deselect (only if not in preview mode)
+  const handleBackgroundClick = useCallback(() => {
+    if (!isPreviewMode) {
+      setSelected(null, null);
+    }
+  }, [isPreviewMode, setSelected]);
+
+  // Node click handlers (disabled in preview mode)
+  const handleNodeClick = useCallback((nodeId: string) => {
+    if (!isPreviewMode) {
+      setSelected(nodeId, 'node');
+    }
+  }, [isPreviewMode, setSelected]);
+
+  const handleNodeDoubleClick = useCallback((nodeId: string) => {
+    if (!isPreviewMode) {
+      addNode(nodeId);
+    }
+  }, [isPreviewMode, addNode]);
+
+  const handleEdgeClick = useCallback((edgeId: string) => {
+    if (!isPreviewMode) {
+      setSelected(edgeId, 'edge');
+    }
+  }, [isPreviewMode, setSelected]);
+
   return (
     <svg
       ref={svgRef}
@@ -107,6 +133,7 @@ export function TreeCanvas() {
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseLeave}
+      onClick={handleBackgroundClick}
     >
       {/* Grid background */}
       <defs>
@@ -144,7 +171,7 @@ export function TreeCanvas() {
               x2={targetPos.x}
               y2={targetPos.y}
               isSelected={selectedId === edge.id}
-              onClick={() => setSelected(edge.id, 'edge')}
+              onClick={() => handleEdgeClick(edge.id)}
             />
           );
         })}
@@ -162,7 +189,8 @@ export function TreeCanvas() {
               y={pos.y}
               size={settings.nodeSize}
               isSelected={selectedId === node.id}
-              onClick={() => setSelected(node.id, 'node')}
+              onClick={() => handleNodeClick(node.id)}
+              onDoubleClick={() => handleNodeDoubleClick(node.id)}
             />
           );
         })}

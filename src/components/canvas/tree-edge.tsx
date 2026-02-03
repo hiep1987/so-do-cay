@@ -1,8 +1,10 @@
 'use client';
 
 // Tree edge component - renders line between nodes with probability label
+// Has invisible wider hit area for easier clicking
 
 import type { TreeEdge } from '@/types/tree';
+import type { MouseEvent } from 'react';
 import { LatexLabel } from './latex-label';
 
 interface TreeEdgeComponentProps {
@@ -31,8 +33,13 @@ export function TreeEdgeComponent({
   // Offset label slightly based on position
   const labelOffset = edge.labelPosition === 'left' ? -15 : 15;
 
+  const handleClick = (e: MouseEvent) => {
+    e.stopPropagation();
+    onClick?.();
+  };
+
   return (
-    <g onClick={onClick} style={{ cursor: 'pointer' }}>
+    <g onClick={handleClick} style={{ cursor: 'pointer' }}>
       {/* Invisible wider line for easier clicking */}
       <line
         x1={x1}
