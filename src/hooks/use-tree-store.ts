@@ -9,10 +9,11 @@ interface TreeStore {
   edges: TreeEdge[];
   settings: TreeSettings;
   selectedId: string | null;
+  selectedType: 'node' | 'edge' | null;
   isPreviewMode: boolean;
 
-  // Node actions
-  addNode: (node: TreeNode) => void;
+  // Smart node actions
+  addNode: (parentId: string | null) => void;
   updateNode: (id: string, updates: Partial<TreeNode>) => void;
   deleteNode: (id: string) => void;
 
@@ -22,7 +23,7 @@ interface TreeStore {
   deleteEdge: (id: string) => void;
 
   // Selection
-  setSelectedId: (id: string | null) => void;
+  setSelected: (id: string | null, type: 'node' | 'edge' | null) => void;
 
   // Settings
   updateSettings: (updates: Partial<TreeSettings>) => void;
@@ -33,31 +34,85 @@ interface TreeStore {
   // Bulk operations
   setDiagram: (nodes: TreeNode[], edges: TreeEdge[]) => void;
   clearDiagram: () => void;
+
+  // Helpers
+  hasRoot: () => boolean;
+  getSelectedNode: () => TreeNode | undefined;
+  getSelectedEdge: () => TreeEdge | undefined;
 }
 
-export const useTreeStore = create<TreeStore>((set) => ({
+// Helper to generate unique IDs
+const generateId = () => `node-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+
+// Helper to collect all descendant node IDs (for cascade delete)
+const getDescendantIds = (nodeId: string, nodes: TreeNode[]): string[] => {
+  const children = nodes.filter((n) => n.parentId === nodeId);
+  return children.flatMap((child) => [child.id, ...getDescendantIds(child.id, nodes)]);
+};
+
+export const useTreeStore = create<TreeStore>((set, get) => ({
   // Initial state
   nodes: [],
   edges: [],
   settings: DEFAULT_SETTINGS,
   selectedId: null,
+  selectedType: null,
   isPreviewMode: false,
 
-  // Node actions
-  addNode: (node) =>
-    set((state) => ({ nodes: [...state.nodes, node] })),
+  // Smart node actions - auto-creates edge when adding child
+  addNode: (parentId) =>
+    set((state) => {
+      const newNodeId = generateId();
+      const newNode: TreeNode = {
+        id: newNodeId,
+        parentId,
+        label: parentId ? 'New' : '',
+        labelPosition: 'below',
+        color: 'orange',
+      };
+
+      // If has parent, auto-create edge
+      if (parentId) {
+        const newEdge: TreeEdge = {
+          id: `edge-${Date.now()}`,
+          sourceId: parentId,
+          targetId: newNodeId,
+          label: '',
+          labelPosition: 'left',
+        };
+        return {
+          nodes: [...state.nodes, newNode],
+          edges: [...state.edges, newEdge],
+          selectedId: newNodeId,
+          selectedType: 'node' as const,
+        };
+      }
+
+      return {
+        nodes: [...state.nodes, newNode],
+        selectedId: newNodeId,
+        selectedType: 'node' as const,
+      };
+    }),
 
   updateNode: (id, updates) =>
     set((state) => ({
       nodes: state.nodes.map((n) => (n.id === id ? { ...n, ...updates } : n)),
     })),
 
+  // Cascade delete - removes node and all descendants
   deleteNode: (id) =>
-    set((state) => ({
-      nodes: state.nodes.filter((n) => n.id !== id),
-      edges: state.edges.filter((e) => e.sourceId !== id && e.targetId !== id),
-      selectedId: state.selectedId === id ? null : state.selectedId,
-    })),
+    set((state) => {
+      const idsToDelete = new Set([id, ...getDescendantIds(id, state.nodes)]);
+      return {
+        nodes: state.nodes.filter((n) => !idsToDelete.has(n.id)),
+        edges: state.edges.filter(
+          (e) => !idsToDelete.has(e.sourceId) && !idsToDelete.has(e.targetId)
+        ),
+        selectedId: idsToDelete.has(state.selectedId ?? '') ? null : state.selectedId,
+        selectedType: idsToDelete.has(state.selectedId ?? '') ? null : state.selectedType,
+      };
+    }),
 
   // Edge actions
   addEdge: (edge) =>
@@ -71,10 +126,12 @@ export const useTreeStore = create<TreeStore>((set) => ({
   deleteEdge: (id) =>
     set((state) => ({
       edges: state.edges.filter((e) => e.id !== id),
+      selectedId: state.selectedId === id ? null : state.selectedId,
+      selectedType: state.selectedId === id ? null : state.selectedType,
     })),
 
-  // Selection
-  setSelectedId: (id) => set({ selectedId: id }),
+  // Selection with type tracking
+  setSelected: (id, type) => set({ selectedId: id, selectedType: type }),
 
   // Settings
   updateSettings: (updates) =>
@@ -86,5 +143,18 @@ export const useTreeStore = create<TreeStore>((set) => ({
   // Bulk operations
   setDiagram: (nodes, edges) => set({ nodes, edges }),
 
-  clearDiagram: () => set({ nodes: [], edges: [], selectedId: null }),
+  clearDiagram: () => set({ nodes: [], edges: [], selectedId: null, selectedType: null }),
+
+  // Helpers
+  hasRoot: () => get().nodes.some((n) => n.parentId === null),
+  getSelectedNode: () => {
+    const { selectedId, selectedType, nodes } = get();
+    if (selectedType !== 'node') return undefined;
+    return nodes.find((n) => n.id === selectedId);
+  },
+  getSelectedEdge: () => {
+    const { selectedId, selectedType, edges } = get();
+    if (selectedType !== 'edge') return undefined;
+    return edges.find((e) => e.id === selectedId);
+  },
 }));

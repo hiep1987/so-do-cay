@@ -4,18 +4,7 @@
 
 import type { TreeNode } from '@/types/tree';
 import { LatexLabel } from './latex-label';
-
-// Color palette for tree nodes
-const COLORS: Record<string, string> = {
-  orange: '#f97316',
-  cyan: '#06b6d4',
-  green: '#22c55e',
-  pink: '#ec4899',
-  violet: '#8b5cf6',
-  blue: '#3b82f6',
-  red: '#ef4444',
-  yellow: '#eab308',
-};
+import { getColorHex } from '@/constants/colors';
 
 interface TreeNodeComponentProps {
   node: TreeNode;
@@ -34,7 +23,7 @@ export function TreeNodeComponent({
   isSelected,
   onClick,
 }: TreeNodeComponentProps) {
-  const fillColor = COLORS[node.color] || node.color || COLORS.orange;
+  const fillColor = getColorHex(node.color);
 
   return (
     <g onClick={onClick} style={{ cursor: 'pointer' }}>

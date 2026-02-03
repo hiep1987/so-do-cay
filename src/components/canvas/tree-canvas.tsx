@@ -41,7 +41,7 @@ export function TreeCanvas() {
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
   // Store state
-  const { nodes, edges, settings, selectedId, setSelectedId, setDiagram } = useTreeStore();
+  const { nodes, edges, settings, selectedId, setSelected, setDiagram } = useTreeStore();
   const positions = useTreeLayout();
 
   // Load sample data on mount
@@ -143,6 +143,8 @@ export function TreeCanvas() {
               y1={sourcePos.y}
               x2={targetPos.x}
               y2={targetPos.y}
+              isSelected={selectedId === edge.id}
+              onClick={() => setSelected(edge.id, 'edge')}
             />
           );
         })}
@@ -160,7 +162,7 @@ export function TreeCanvas() {
               y={pos.y}
               size={settings.nodeSize}
               isSelected={selectedId === node.id}
-              onClick={() => setSelectedId(node.id)}
+              onClick={() => setSelected(node.id, 'node')}
             />
           );
         })}
