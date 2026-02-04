@@ -41,21 +41,21 @@ function getMaxDepth(nodes: TreeNode[]): number {
   return maxDepth;
 }
 
-// Generate TikZ style definitions
+// Generate TikZ style definitions (4-space indent to match reference)
 function generateStyles(settings: TreeSettings, maxDepth: number): string {
   const lines: string[] = [
-    `  dot/.style={circle, fill=#1, inner sep=0pt, minimum size=${settings.nodeSize}pt}`,
+    `    dot/.style={circle, fill=#1, inner sep=0pt, minimum size=${settings.nodeSize}pt}`,
   ];
 
   // Add level styles with halving sibling distance per level
   for (let i = 1; i <= maxDepth; i++) {
     const siblingDist = settings.siblingDistance / Math.pow(2, i - 1);
     lines.push(
-      `  level ${i}/.style={sibling distance=${pxToCm(siblingDist)}, level distance=${pxToCm(settings.levelDistance)}}`
+      `    level ${i}/.style={sibling distance=${pxToCm(siblingDist)}, level distance=${pxToCm(settings.levelDistance)}}`
     );
   }
 
-  lines.push(`  edge from parent/.style={draw, thick, black}`);
+  lines.push(`    edge from parent/.style={draw, thick, black}`);
   return lines.join(',\n');
 }
 
@@ -80,14 +80,20 @@ function formatLabel(label: string, position: string): string {
   return `, label=${position}:${formatted}`;
 }
 
-// Generate edge label markup
+// Generate edge label markup (returns just the edge statement, caller handles indentation)
 function generateEdgeLabel(edge: TreeEdge): string {
   if (!edge.label) return '';
   const pos = edge.labelPosition === 'left' ? 'left=5pt' : 'right=5pt';
-  return ` edge from parent node[${pos}] {${edge.label}}`;
+  return `edge from parent node[${pos}] {${edge.label}}`;
 }
 
 // Recursively generate node and children TikZ code
+// Reference format indentation:
+//   \node[...] {}         <- root at indent 0
+//       child {           <- indent 4
+//           node[...] {}  <- indent 8
+//           edge from parent ...
+//       }
 function generateNode(
   node: TreeNode,
   allNodes: TreeNode[],
@@ -95,7 +101,10 @@ function generateNode(
   depth: number,
   isRoot: boolean = false
 ): string {
-  const indent = '\t'.repeat(depth);
+  // Use 4 spaces per indent level
+  const nodeIndent = '    '.repeat(depth);
+  const childBlockIndent = '    '.repeat(depth + 1);
+  const childContentIndent = '    '.repeat(depth + 2);
   const color = COLOR_MAP[node.color] || node.color;
   const label = formatLabel(node.label, node.labelPosition);
 
@@ -104,15 +113,27 @@ function generateNode(
 
   // Root node uses \node, children use node (no backslash) in TikZ tree syntax
   const nodeCmd = isRoot ? '\\node' : 'node';
-  let result = `${indent}${nodeCmd}[dot=${color}${label}] {}`;
+  let result = `${nodeIndent}${nodeCmd}[dot=${color}${label}] {}`;
 
   if (children.length > 0) {
     result += '\n';
     for (const child of children) {
       const edge = edgeMap.get(child.id);
-      const childStr = generateNode(child, allNodes, edgeMap, depth + 1, false);
+      // Child nodes are rendered at depth+2 (inside child { } block)
+      const childStr = generateNode(child, allNodes, edgeMap, depth + 2, false);
       const edgeLabel = edge ? generateEdgeLabel(edge) : '';
-      result += `${indent}child {\n${childStr}${edgeLabel}\n${indent}}\n`;
+
+      // Format matching reference:
+      //     child {
+      //         node[...] {}
+      //         edge from parent ...
+      //     }
+      result += `${childBlockIndent}child {\n`;
+      result += `${childStr}\n`;
+      if (edgeLabel) {
+        result += `${childContentIndent}${edgeLabel}\n`;
+      }
+      result += `${childBlockIndent}}\n`;
     }
     result = result.trimEnd();
   }
@@ -143,8 +164,8 @@ export function generateTikZ(diagram: TreeDiagram): string {
   // Generate styles
   const styles = generateStyles(settings, maxDepth);
 
-  // Generate tree recursively (root uses \node, children use node)
-  const tree = generateNode(root, nodes, edgeMap, 1, true);
+  // Generate tree recursively (root at depth 0 = no indent, children indented)
+  const tree = generateNode(root, nodes, edgeMap, 0, true);
 
   return `\\begin{tikzpicture}[
 ${styles}

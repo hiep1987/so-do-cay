@@ -29,7 +29,7 @@ export interface TreeDiagram {
 }
 
 export const DEFAULT_SETTINGS: TreeSettings = {
-  levelDistance: 120,
-  siblingDistance: 100,
-  nodeSize: 8,
+  levelDistance: 120, // 3cm (120/40)
+  siblingDistance: 200, // 5cm at level 1, halves to 2.5cm at level 2
+  nodeSize: 6,
 };
