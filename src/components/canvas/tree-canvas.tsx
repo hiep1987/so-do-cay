@@ -19,24 +19,26 @@ export interface TreeCanvasRef {
   getSvgElement: () => SVGSVGElement | null;
 }
 
-// Sample tree data for testing
+// Default probability tree matching reference TikZ format
+// Structure: Root O → A/Ā → B/B̄
+// Labels use plain text for canvas display; TikZ generator handles LaTeX conversion
 const SAMPLE_NODES = [
-  { id: 'root', parentId: null, label: '', labelPosition: 'above' as const, color: 'orange' },
-  { id: 'b', parentId: 'root', label: 'B', labelPosition: 'below' as const, color: 'cyan' },
-  { id: 'b-bar', parentId: 'root', label: '\\overline{B}', labelPosition: 'below' as const, color: 'pink' },
-  { id: 'a1', parentId: 'b', label: 'A', labelPosition: 'below' as const, color: 'green' },
-  { id: 'a1-bar', parentId: 'b', label: '\\overline{A}', labelPosition: 'below' as const, color: 'violet' },
-  { id: 'a2', parentId: 'b-bar', label: 'A', labelPosition: 'below' as const, color: 'green' },
-  { id: 'a2-bar', parentId: 'b-bar', label: '\\overline{A}', labelPosition: 'below' as const, color: 'violet' },
+  { id: 'root', parentId: null, label: 'Gốc O', labelPosition: 'above' as const, color: 'orange' },
+  { id: 'a', parentId: 'root', label: 'A', labelPosition: 'left' as const, color: 'cyan' },
+  { id: 'a-bar', parentId: 'root', label: 'Ā', labelPosition: 'right' as const, color: 'green' },
+  { id: 'b1', parentId: 'a', label: 'B', labelPosition: 'below' as const, color: 'pink' },
+  { id: 'b1-bar', parentId: 'a', label: 'B̄', labelPosition: 'below' as const, color: 'violet' },
+  { id: 'b2', parentId: 'a-bar', label: 'B', labelPosition: 'below' as const, color: 'pink' },
+  { id: 'b2-bar', parentId: 'a-bar', label: 'B̄', labelPosition: 'below' as const, color: 'violet' },
 ];
 
 const SAMPLE_EDGES = [
-  { id: 'e1', sourceId: 'root', targetId: 'b', label: '0.6', labelPosition: 'left' as const },
-  { id: 'e2', sourceId: 'root', targetId: 'b-bar', label: '0.4', labelPosition: 'right' as const },
-  { id: 'e3', sourceId: 'b', targetId: 'a1', label: '0.3', labelPosition: 'left' as const },
-  { id: 'e4', sourceId: 'b', targetId: 'a1-bar', label: '0.7', labelPosition: 'right' as const },
-  { id: 'e5', sourceId: 'b-bar', targetId: 'a2', label: '0.5', labelPosition: 'left' as const },
-  { id: 'e6', sourceId: 'b-bar', targetId: 'a2-bar', label: '0.5', labelPosition: 'right' as const },
+  { id: 'e1', sourceId: 'root', targetId: 'a', label: '0,4', labelPosition: 'left' as const },
+  { id: 'e2', sourceId: 'root', targetId: 'a-bar', label: '0,6', labelPosition: 'right' as const },
+  { id: 'e3', sourceId: 'a', targetId: 'b1', label: '0,3', labelPosition: 'left' as const },
+  { id: 'e4', sourceId: 'a', targetId: 'b1-bar', label: '0,7', labelPosition: 'right' as const },
+  { id: 'e5', sourceId: 'a-bar', targetId: 'b2', label: '0,4', labelPosition: 'left' as const },
+  { id: 'e6', sourceId: 'a-bar', targetId: 'b2-bar', label: '0,6', labelPosition: 'right' as const },
 ];
 
 export const TreeCanvas = forwardRef<TreeCanvasRef>(function TreeCanvas(_, ref) {

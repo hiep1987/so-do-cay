@@ -59,23 +59,51 @@ function generateStyles(settings: TreeSettings, maxDepth: number): string {
   return lines.join(',\n');
 }
 
+// Convert Unicode overline characters to LaTeX \overline{} format
+// Maps: Ā→A, B̄→B, etc. (combining macron U+0304)
+function convertToLatex(text: string): { latex: string; needsMath: boolean } {
+  // Unicode overline mappings (letter + combining macron)
+  const overlineMap: Record<string, string> = {
+    'Ā': '\\overline{A}', 'ā': '\\overline{a}',
+    'B̄': '\\overline{B}', 'b̄': '\\overline{b}',
+    'C̄': '\\overline{C}', 'c̄': '\\overline{c}',
+    'D̄': '\\overline{D}', 'd̄': '\\overline{d}',
+    'Ē': '\\overline{E}', 'ē': '\\overline{e}',
+    'Ō': '\\overline{O}', 'ō': '\\overline{o}',
+  };
+
+  let result = text;
+  let needsMath = false;
+
+  // Replace overline characters
+  for (const [unicode, latex] of Object.entries(overlineMap)) {
+    if (result.includes(unicode)) {
+      result = result.replace(new RegExp(unicode, 'g'), latex);
+      needsMath = true;
+    }
+  }
+
+  // Check if contains LaTeX commands
+  if (result.includes('\\')) {
+    needsMath = true;
+  }
+
+  return { latex: result, needsMath };
+}
+
 // Format node label for TikZ with position
 function formatLabel(label: string, position: string): string {
   if (!label) return '';
 
-  let formatted = label;
-  // Already in math mode
+  // Already in math mode - use as-is
   if (label.startsWith('$') && label.endsWith('$')) {
-    formatted = `{${label}}`;
+    return `, label=${position}:{${label}}`;
   }
-  // Contains LaTeX commands (backslash) - needs math mode
-  else if (label.includes('\\')) {
-    formatted = `{$${label}$}`;
-  }
-  // Plain text - wrap in braces
-  else {
-    formatted = `{${label}}`;
-  }
+
+  const { latex, needsMath } = convertToLatex(label);
+
+  // Wrap in math mode if needed, otherwise plain braces
+  const formatted = needsMath ? `{$${latex}$}` : `{${label}}`;
 
   return `, label=${position}:${formatted}`;
 }
