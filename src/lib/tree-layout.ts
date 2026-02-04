@@ -1,4 +1,4 @@
-// Tree layout algorithm - computes node positions for tree diagram
+// Tree layout algorithm - computes symmetric node positions for tree diagram
 
 import type { TreeNode, TreeSettings } from '@/types/tree';
 
@@ -41,23 +41,23 @@ function buildTree(nodes: TreeNode[]): TreeNodeWithChildren | null {
   return root;
 }
 
-// Calculate subtree width (for centering parent above children)
+// Count leaf nodes in subtree (for proper width calculation)
+function countLeaves(node: TreeNodeWithChildren): number {
+  if (node.children.length === 0) return 1;
+  return node.children.reduce((sum, child) => sum + countLeaves(child), 0);
+}
+
+// Calculate subtree width based on leaf count for symmetric distribution
 function calculateSubtreeWidth(
   node: TreeNodeWithChildren,
   siblingDistance: number
 ): number {
-  if (node.children.length === 0) return 0;
-
-  let totalWidth = 0;
-  for (let i = 0; i < node.children.length; i++) {
-    const childWidth = calculateSubtreeWidth(node.children[i], siblingDistance);
-    totalWidth += Math.max(childWidth, siblingDistance);
-  }
-  // Subtract one siblingDistance since we don't need gap after last child
-  return totalWidth - siblingDistance;
+  const leafCount = countLeaves(node);
+  // Width = (leafCount - 1) * siblingDistance to center properly
+  return (leafCount - 1) * siblingDistance;
 }
 
-// Recursive layout function
+// Recursive layout function with symmetric distribution
 function layoutNode(
   node: TreeNodeWithChildren,
   x: number,
@@ -72,22 +72,30 @@ function layoutNode(
   const { levelDistance, siblingDistance } = settings;
   const childY = y + levelDistance;
 
-  // Calculate total width needed for all children
-  const childWidths = node.children.map(
-    (child) => Math.max(calculateSubtreeWidth(child, siblingDistance), siblingDistance)
+  // Calculate width for each child's subtree
+  const childWidths = node.children.map((child) =>
+    calculateSubtreeWidth(child, siblingDistance)
   );
-  const totalWidth = childWidths.reduce((sum, w) => sum + w, 0) - siblingDistance;
 
-  // Start position for first child (centered below parent)
-  let currentX = x - totalWidth / 2;
+  // Total width of all children subtrees + gaps between them
+  const totalChildrenWidth =
+    childWidths.reduce((sum, w) => sum + w, 0) +
+    (node.children.length - 1) * siblingDistance;
+
+  // Start from left edge, centered under parent
+  let currentX = x - totalChildrenWidth / 2;
 
   for (let i = 0; i < node.children.length; i++) {
     const child = node.children[i];
-    const childWidth = childWidths[i];
-    const childX = currentX + childWidth / 2;
+    const childSubtreeWidth = childWidths[i];
+
+    // Position child at center of its subtree allocation
+    const childX = currentX + childSubtreeWidth / 2;
 
     layoutNode(child, childX, childY, settings, positions);
-    currentX += childWidth;
+
+    // Move to next position: current subtree width + gap
+    currentX += childSubtreeWidth + siblingDistance;
   }
 }
 
