@@ -1,9 +1,14 @@
-import { TreeCanvas } from '@/components/canvas/tree-canvas';
+'use client';
+
+import { useRef } from 'react';
+import { TreeCanvas, type TreeCanvasRef } from '@/components/canvas/tree-canvas';
 import { Toolbar } from '@/components/toolbar/toolbar';
 import { RightPanelContainer } from '@/components/panel/right-panel-container';
 import { CanvasErrorBoundary } from '@/components/error-boundary-canvas';
 
 export default function Home() {
+  const canvasRef = useRef<TreeCanvasRef>(null);
+
   return (
     <div className="flex h-screen w-screen overflow-hidden">
       {/* Main area - toolbar + canvas */}
@@ -11,14 +16,14 @@ export default function Home() {
         <Toolbar />
         <main className="flex-1 h-full overflow-hidden">
           <CanvasErrorBoundary>
-            <TreeCanvas />
+            <TreeCanvas ref={canvasRef} />
           </CanvasErrorBoundary>
         </main>
       </div>
 
       {/* Right panel - conditionally shows edit or preview panels */}
       <aside className="w-80 h-full border-l border-gray-200 bg-gray-50 p-4 overflow-y-auto">
-        <RightPanelContainer />
+        <RightPanelContainer canvasRef={canvasRef} />
       </aside>
     </div>
   );

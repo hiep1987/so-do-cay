@@ -2,7 +2,7 @@
 
 // SVG canvas component with pan/zoom and tree rendering
 
-import { useRef, useState, useCallback, useEffect, type MouseEvent, type WheelEvent } from 'react';
+import { useRef, useState, useCallback, useEffect, forwardRef, useImperativeHandle, type MouseEvent, type WheelEvent } from 'react';
 import { useTreeStore } from '@/hooks/use-tree-store';
 import { useTreeLayout } from '@/hooks/use-tree-layout';
 import { TreeNodeComponent } from './tree-node';
@@ -12,6 +12,11 @@ interface ViewState {
   x: number;
   y: number;
   scale: number;
+}
+
+// Interface for exposing SVG element to parent components (for export)
+export interface TreeCanvasRef {
+  getSvgElement: () => SVGSVGElement | null;
 }
 
 // Sample tree data for testing
@@ -34,11 +39,16 @@ const SAMPLE_EDGES = [
   { id: 'e6', sourceId: 'b-bar', targetId: 'a2-bar', label: '0.5', labelPosition: 'right' as const },
 ];
 
-export function TreeCanvas() {
+export const TreeCanvas = forwardRef<TreeCanvasRef>(function TreeCanvas(_, ref) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [view, setView] = useState<ViewState>({ x: 0, y: 0, scale: 1 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+
+  // Expose SVG element to parent for export functionality
+  useImperativeHandle(ref, () => ({
+    getSvgElement: () => svgRef.current,
+  }));
 
   // Store state
   const { nodes, edges, settings, selectedId, setSelected, setDiagram, addNode, isPreviewMode } = useTreeStore();
@@ -202,4 +212,4 @@ export function TreeCanvas() {
       </text>
     </svg>
   );
-}
+});
