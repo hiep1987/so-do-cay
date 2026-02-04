@@ -1,7 +1,6 @@
 import { TreeCanvas } from '@/components/canvas/tree-canvas';
 import { Toolbar } from '@/components/toolbar/toolbar';
-import { PropertyPanel } from '@/components/panel/property-panel';
-import { LayoutSettings } from '@/components/panel/layout-settings';
+import { RightPanelContainer } from '@/components/panel/right-panel-container';
 import { CanvasErrorBoundary } from '@/components/error-boundary-canvas';
 
 export default function Home() {
@@ -17,12 +16,9 @@ export default function Home() {
         </main>
       </div>
 
-      {/* Right panel - properties and settings */}
+      {/* Right panel - conditionally shows edit or preview panels */}
       <aside className="w-80 h-full border-l border-gray-200 bg-gray-50 p-4 overflow-y-auto">
-        <PropertyPanel />
-        <div className="border-t border-gray-200 pt-4 mt-2">
-          <LayoutSettings />
-        </div>
+        <RightPanelContainer />
       </aside>
     </div>
   );
