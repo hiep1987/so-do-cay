@@ -1,19 +1,17 @@
 'use client';
 
-// TikZ output panel - placeholder for Phase 6 implementation
+// TikZ output panel - displays generated TikZ code with copy functionality
 
 import { useState } from 'react';
+import { useTreeStore } from '@/hooks/use-tree-store';
+import { generateTikZ } from '@/lib/tikz-generator';
 
 export function TikzOutput() {
   const [copied, setCopied] = useState(false);
+  const { nodes, edges, settings } = useTreeStore();
 
-  // Placeholder - actual TikZ generator in Phase 6
-  const tikzCode = `% TikZ code will appear here
-% This is a placeholder for Phase 6 implementation
-
-\\begin{tikzpicture}
-  % Tree diagram code
-\\end{tikzpicture}`;
+  // Generate TikZ code from current tree state
+  const tikzCode = generateTikZ({ nodes, edges, settings });
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(tikzCode);
@@ -24,7 +22,7 @@ export function TikzOutput() {
   return (
     <div className="space-y-3">
       <h3 className="font-semibold text-gray-900">TikZ Output</h3>
-      <pre className="bg-gray-100 p-3 rounded-md text-sm font-mono overflow-auto max-h-64 text-gray-700">
+      <pre className="bg-gray-100 p-3 rounded-md text-sm font-mono overflow-auto max-h-64 text-gray-700 whitespace-pre">
         {tikzCode}
       </pre>
       <button
