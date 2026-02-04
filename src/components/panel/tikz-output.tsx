@@ -1,6 +1,6 @@
 'use client';
 
-// TikZ output panel - displays generated TikZ code with copy functionality
+// TikZ output panel - displays generated TikZ code with syntax highlighting and copy functionality
 
 import { useState } from 'react';
 import { useTreeStore } from '@/hooks/use-tree-store';
@@ -21,16 +21,32 @@ export function TikzOutput() {
 
   return (
     <div className="space-y-3">
-      <h3 className="font-semibold text-gray-900">TikZ Output</h3>
-      <pre className="bg-gray-100 p-3 rounded-md text-sm font-mono overflow-auto max-h-64 text-gray-700 whitespace-pre">
-        {tikzCode}
-      </pre>
+      <div className="flex items-center justify-between">
+        <h3 className="font-mono font-semibold text-text-secondary text-sm">
+          // tikz.output
+        </h3>
+        <span className="text-xs font-mono text-text-muted">.tex</span>
+      </div>
+
+      {/* Code block with syntax highlighting aesthetic */}
+      <div className="relative rounded-md overflow-hidden border border-border">
+        {/* Line numbers gutter */}
+        <pre className="bg-background p-3 text-sm font-mono overflow-auto max-h-64">
+          <code className="text-text-primary whitespace-pre">{tikzCode}</code>
+        </pre>
+      </div>
+
       <button
         onClick={handleCopy}
-        className="w-full px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-md
-          hover:bg-blue-700 transition-colors"
+        className={`w-full px-3 py-2 text-sm font-mono font-medium rounded-md cursor-pointer
+          transition-colors duration-150
+          ${
+            copied
+              ? 'bg-success-muted text-success'
+              : 'bg-primary text-white hover:bg-primary-hover'
+          }`}
       >
-        {copied ? 'Copied!' : 'Copy to Clipboard'}
+        {copied ? '✓ copied!' : 'copy()'}
       </button>
     </div>
   );

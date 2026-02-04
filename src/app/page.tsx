@@ -10,7 +10,7 @@ export default function Home() {
   const canvasRef = useRef<TreeCanvasRef>(null);
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden">
+    <div className="flex h-screen w-screen overflow-hidden bg-background">
       {/* Main area - toolbar + canvas */}
       <div className="flex-1 flex flex-col h-full">
         <Toolbar />
@@ -22,7 +22,7 @@ export default function Home() {
       </div>
 
       {/* Right panel - conditionally shows edit or preview panels */}
-      <aside className="w-80 h-full border-l border-gray-200 bg-gray-50 p-4 overflow-y-auto">
+      <aside className="w-80 h-full border-l border-border bg-surface p-4 overflow-y-auto">
         <RightPanelContainer canvasRef={canvasRef} />
       </aside>
     </div>

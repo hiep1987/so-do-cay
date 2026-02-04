@@ -1,6 +1,6 @@
 'use client';
 
-// Layout settings panel with sliders for tree spacing and node size
+// Layout settings panel with sliders for tree spacing and node size - dark mode developer tool aesthetic
 
 import { useTreeStore } from '@/hooks/use-tree-store';
 
@@ -16,11 +16,11 @@ interface SliderSettingProps {
 function SliderSetting({ label, value, min, max, unit = 'px', onChange }: SliderSettingProps) {
   return (
     <div className="mb-4">
-      <div className="flex justify-between items-center mb-1">
-        <label className="text-xs text-gray-600">{label}</label>
-        <span className="text-xs text-gray-500">
+      <div className="flex justify-between items-center mb-2">
+        <label className="text-xs font-mono text-text-muted">{label}</label>
+        <span className="text-xs font-mono text-primary">
           {value}
-          {unit}
+          <span className="text-text-muted">{unit}</span>
         </span>
       </div>
       <input
@@ -29,8 +29,7 @@ function SliderSetting({ label, value, min, max, unit = 'px', onChange }: Slider
         max={max}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer
-          accent-blue-600"
+        className="w-full cursor-pointer"
       />
     </div>
   );
@@ -41,10 +40,12 @@ export function LayoutSettings() {
 
   return (
     <div>
-      <h3 className="text-sm font-semibold text-gray-700 mb-3">Layout Settings</h3>
+      <h3 className="text-sm font-mono font-semibold text-text-secondary mb-3">
+        // layout.settings
+      </h3>
 
       <SliderSetting
-        label="Level Distance"
+        label="levelDistance"
         value={settings.levelDistance}
         min={40}
         max={200}
@@ -52,7 +53,7 @@ export function LayoutSettings() {
       />
 
       <SliderSetting
-        label="Sibling Distance"
+        label="siblingDistance"
         value={settings.siblingDistance}
         min={40}
         max={200}
@@ -60,7 +61,7 @@ export function LayoutSettings() {
       />
 
       <SliderSetting
-        label="Node Size"
+        label="nodeSize"
         value={settings.nodeSize}
         min={6}
         max={24}

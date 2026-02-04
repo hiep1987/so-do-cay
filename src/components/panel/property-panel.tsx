@@ -1,6 +1,6 @@
 'use client';
 
-// Property panel for editing selected node or edge properties
+// Property panel for editing selected node or edge properties - dark mode developer tool aesthetic
 
 import { useTreeStore } from '@/hooks/use-tree-store';
 import { PRESET_COLORS } from '@/constants/colors';
@@ -26,8 +26,12 @@ export function PropertyPanel() {
   if (!selectedId || !selectedType) {
     return (
       <div className="mb-6">
-        <h3 className="text-sm font-semibold text-gray-700 mb-3">Properties</h3>
-        <p className="text-sm text-gray-500">Select a node or edge to edit</p>
+        <h3 className="text-sm font-mono font-semibold text-text-secondary mb-3">
+          // properties
+        </h3>
+        <p className="text-sm font-mono text-text-muted">
+          select a node or edge
+        </p>
       </div>
     );
   }
@@ -36,26 +40,33 @@ export function PropertyPanel() {
   if (selectedType === 'node' && selectedNode) {
     return (
       <div className="mb-6">
-        <h3 className="text-sm font-semibold text-gray-700 mb-3">Node Properties</h3>
+        <h3 className="text-sm font-mono font-semibold text-text-secondary mb-3">
+          // node.properties
+        </h3>
 
         {/* Label input */}
         <div className="mb-4">
-          <label className="block text-xs text-gray-600 mb-1">
-            Label (supports LaTeX)
+          <label className="block text-xs font-mono text-text-muted mb-1.5">
+            label <span className="text-text-muted">(LaTeX)</span>
           </label>
           <input
             type="text"
             value={selectedNode.label}
             onChange={(e) => updateNode(selectedNode.id, { label: e.target.value })}
             placeholder="e.g., A or \overline{B}"
-            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md
-              focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-3 py-2 text-sm font-mono
+              bg-surface-elevated border border-border rounded-md
+              text-text-primary placeholder:text-text-muted
+              focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
+              transition-colors duration-150"
           />
         </div>
 
         {/* Label position */}
         <div className="mb-4">
-          <label className="block text-xs text-gray-600 mb-1">Label Position</label>
+          <label className="block text-xs font-mono text-text-muted mb-1.5">
+            labelPosition
+          </label>
           <select
             value={selectedNode.labelPosition}
             onChange={(e) =>
@@ -63,12 +74,14 @@ export function PropertyPanel() {
                 labelPosition: e.target.value as typeof selectedNode.labelPosition,
               })
             }
-            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md
-              focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 text-sm font-mono
+              bg-surface-elevated border border-border rounded-md
+              text-text-primary cursor-pointer
+              focus:outline-none focus:ring-2 focus:ring-primary"
           >
             {NODE_LABEL_POSITIONS.map((pos) => (
               <option key={pos} value={pos}>
-                {pos.charAt(0).toUpperCase() + pos.slice(1)}
+                &quot;{pos}&quot;
               </option>
             ))}
           </select>
@@ -76,16 +89,18 @@ export function PropertyPanel() {
 
         {/* Color picker */}
         <div className="mb-4">
-          <label className="block text-xs text-gray-600 mb-1">Color</label>
+          <label className="block text-xs font-mono text-text-muted mb-1.5">
+            color
+          </label>
           <div className="flex gap-2">
             {PRESET_COLORS.map((color) => (
               <button
                 key={color.name}
                 onClick={() => updateNode(selectedNode.id, { color: color.name })}
-                className={`w-7 h-7 rounded-full transition-all
+                className={`w-7 h-7 rounded-md cursor-pointer transition-all duration-150
                   ${
                     selectedNode.color === color.name
-                      ? 'ring-2 ring-offset-2 ring-gray-400'
+                      ? 'ring-2 ring-offset-2 ring-offset-surface ring-primary scale-110'
                       : 'hover:scale-110'
                   }`}
                 style={{ backgroundColor: color.hex }}
@@ -98,10 +113,11 @@ export function PropertyPanel() {
         {/* Add child button */}
         <button
           onClick={() => addNode(selectedNode.id)}
-          className="w-full px-3 py-2 text-sm font-medium rounded-md
-            bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+          className="w-full px-3 py-2 text-sm font-mono font-medium rounded-md cursor-pointer
+            bg-primary text-white hover:bg-primary-hover
+            transition-colors duration-150"
         >
-          Add Child
+          + addChild()
         </button>
       </div>
     );
@@ -111,26 +127,33 @@ export function PropertyPanel() {
   if (selectedType === 'edge' && selectedEdge) {
     return (
       <div className="mb-6">
-        <h3 className="text-sm font-semibold text-gray-700 mb-3">Edge Properties</h3>
+        <h3 className="text-sm font-mono font-semibold text-text-secondary mb-3">
+          // edge.properties
+        </h3>
 
         {/* Label input */}
         <div className="mb-4">
-          <label className="block text-xs text-gray-600 mb-1">
-            Label (probability)
+          <label className="block text-xs font-mono text-text-muted mb-1.5">
+            label <span className="text-text-muted">(probability)</span>
           </label>
           <input
             type="text"
             value={selectedEdge.label}
             onChange={(e) => updateEdge(selectedEdge.id, { label: e.target.value })}
             placeholder="e.g., 0.6 or P(A)"
-            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md
-              focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-3 py-2 text-sm font-mono
+              bg-surface-elevated border border-border rounded-md
+              text-text-primary placeholder:text-text-muted
+              focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
+              transition-colors duration-150"
           />
         </div>
 
         {/* Label position */}
         <div className="mb-4">
-          <label className="block text-xs text-gray-600 mb-1">Label Position</label>
+          <label className="block text-xs font-mono text-text-muted mb-1.5">
+            labelPosition
+          </label>
           <select
             value={selectedEdge.labelPosition}
             onChange={(e) =>
@@ -138,12 +161,14 @@ export function PropertyPanel() {
                 labelPosition: e.target.value as typeof selectedEdge.labelPosition,
               })
             }
-            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md
-              focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 text-sm font-mono
+              bg-surface-elevated border border-border rounded-md
+              text-text-primary cursor-pointer
+              focus:outline-none focus:ring-2 focus:ring-primary"
           >
             {EDGE_LABEL_POSITIONS.map((pos) => (
               <option key={pos} value={pos}>
-                {pos.charAt(0).toUpperCase() + pos.slice(1)}
+                &quot;{pos}&quot;
               </option>
             ))}
           </select>

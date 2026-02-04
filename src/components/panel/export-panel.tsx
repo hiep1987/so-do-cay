@@ -1,6 +1,6 @@
 'use client';
 
-// Export panel - SVG and PNG image export buttons
+// Export panel - SVG and PNG image export buttons - dark mode developer tool aesthetic
 
 import { useState } from 'react';
 import type { TreeCanvasRef } from '@/components/canvas/tree-canvas';
@@ -35,22 +35,27 @@ export function ExportPanel({ canvasRef }: ExportPanelProps) {
 
   return (
     <div className="space-y-3">
-      <h3 className="font-semibold text-gray-900">Export Image</h3>
+      <h3 className="font-mono font-semibold text-text-secondary text-sm">
+        // export.image
+      </h3>
       <div className="flex gap-2">
         <button
           onClick={handleExportSvg}
-          className="flex-1 px-3 py-2 bg-green-500 text-white text-sm font-medium rounded-md
-            hover:bg-green-600 transition-colors"
+          className="flex-1 px-3 py-2 text-sm font-mono font-medium rounded-md cursor-pointer
+            bg-[#166534] text-[#4ADE80] hover:bg-success hover:text-white
+            transition-colors duration-150"
         >
-          Export SVG
+          .svg
         </button>
         <button
           onClick={handleExportPng}
           disabled={isExporting}
-          className="flex-1 px-3 py-2 bg-purple-500 text-white text-sm font-medium rounded-md
-            hover:bg-purple-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex-1 px-3 py-2 text-sm font-mono font-medium rounded-md cursor-pointer
+            bg-[#581c87] text-[#A78BFA] hover:bg-[#7C3AED] hover:text-white
+            transition-colors duration-150
+            disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {isExporting ? 'Exporting...' : 'Export PNG'}
+          {isExporting ? 'exporting...' : '.png'}
         </button>
       </div>
     </div>

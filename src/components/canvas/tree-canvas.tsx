@@ -1,6 +1,6 @@
 'use client';
 
-// SVG canvas component with pan/zoom and tree rendering
+// SVG canvas component with pan/zoom and tree rendering - dark mode developer tool aesthetic
 
 import { useRef, useState, useCallback, useEffect, forwardRef, useImperativeHandle, type MouseEvent, type WheelEvent } from 'react';
 import { useTreeStore } from '@/hooks/use-tree-store';
@@ -137,7 +137,8 @@ export const TreeCanvas = forwardRef<TreeCanvasRef>(function TreeCanvas(_, ref) 
   return (
     <svg
       ref={svgRef}
-      className="w-full h-full bg-white cursor-grab active:cursor-grabbing"
+      className="w-full h-full cursor-grab active:cursor-grabbing"
+      style={{ backgroundColor: '#0F172A' }}
       onWheel={handleWheel}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
@@ -145,7 +146,7 @@ export const TreeCanvas = forwardRef<TreeCanvasRef>(function TreeCanvas(_, ref) 
       onMouseLeave={handleMouseLeave}
       onClick={handleBackgroundClick}
     >
-      {/* Grid background */}
+      {/* Grid background - dark mode */}
       <defs>
         <pattern
           id="grid"
@@ -157,12 +158,23 @@ export const TreeCanvas = forwardRef<TreeCanvasRef>(function TreeCanvas(_, ref) 
           <path
             d="M 40 0 L 0 0 0 40"
             fill="none"
-            stroke="#e5e7eb"
+            stroke="#1E293B"
             strokeWidth={1 / view.scale}
           />
         </pattern>
+        {/* Subtle dot pattern for depth */}
+        <pattern
+          id="dots"
+          width="40"
+          height="40"
+          patternUnits="userSpaceOnUse"
+          patternTransform={`translate(${view.x} ${view.y}) scale(${view.scale})`}
+        >
+          <circle cx="20" cy="20" r="1" fill="#334155" />
+        </pattern>
       </defs>
       <rect width="100%" height="100%" fill="url(#grid)" />
+      <rect width="100%" height="100%" fill="url(#dots)" />
 
       {/* Transformed content */}
       <g transform={`translate(${view.x}, ${view.y}) scale(${view.scale})`}>
@@ -206,9 +218,15 @@ export const TreeCanvas = forwardRef<TreeCanvasRef>(function TreeCanvas(_, ref) 
         })}
       </g>
 
-      {/* Zoom indicator */}
-      <text x="10" y="20" fontSize="12" fill="#6b7280">
-        Zoom: {Math.round(view.scale * 100)}%
+      {/* Zoom indicator - dark mode */}
+      <text
+        x="12"
+        y="24"
+        fontSize="12"
+        fontFamily="var(--font-geist-mono), monospace"
+        fill="#64748B"
+      >
+        zoom: {Math.round(view.scale * 100)}%
       </text>
     </svg>
   );

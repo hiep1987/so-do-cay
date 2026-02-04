@@ -20,7 +20,7 @@ export function RightPanelContainer({ canvasRef }: RightPanelContainerProps) {
     return (
       <>
         <TikzOutput />
-        <div className="border-t border-gray-200 pt-4 mt-4">
+        <div className="border-t border-border pt-4 mt-4">
           <ExportPanel canvasRef={canvasRef} />
         </div>
       </>
@@ -30,7 +30,7 @@ export function RightPanelContainer({ canvasRef }: RightPanelContainerProps) {
   return (
     <>
       <PropertyPanel />
-      <div className="border-t border-gray-200 pt-4 mt-2">
+      <div className="border-t border-border pt-4 mt-2">
         <LayoutSettings />
       </div>
     </>

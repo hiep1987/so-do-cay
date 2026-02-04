@@ -1,6 +1,6 @@
 'use client';
 
-// Toolbar component with Add Root, Delete, Preview toggle
+// Toolbar component with Add Root, Delete, Preview toggle - dark mode developer tool aesthetic
 
 import { useTreeStore } from '@/hooks/use-tree-store';
 
@@ -32,42 +32,58 @@ export function Toolbar() {
   };
 
   return (
-    <div className="flex items-center gap-2 px-4 py-2 border-b border-gray-200 bg-white">
+    <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-surface">
+      {/* Logo / App name */}
+      <span className="text-sm font-mono font-semibold text-text-secondary mr-2">
+        tree-builder
+      </span>
+
+      <div className="w-px h-5 bg-border" />
+
       <button
         onClick={handleAddRoot}
         disabled={rootExists}
-        className="px-3 py-1.5 text-sm font-medium rounded-md
-          bg-blue-600 text-white hover:bg-blue-700
-          disabled:bg-gray-300 disabled:cursor-not-allowed
-          transition-colors"
+        className="px-3 py-1.5 text-sm font-medium font-mono rounded-md cursor-pointer
+          bg-primary text-white hover:bg-primary-hover
+          disabled:bg-surface-elevated disabled:text-text-muted disabled:cursor-not-allowed
+          transition-colors duration-150"
       >
-        Add Root
+        + root
       </button>
 
       <button
         onClick={handleDelete}
         disabled={!selectedId}
-        className="px-3 py-1.5 text-sm font-medium rounded-md
-          bg-red-600 text-white hover:bg-red-700
-          disabled:bg-gray-300 disabled:cursor-not-allowed
-          transition-colors"
+        className="px-3 py-1.5 text-sm font-medium font-mono rounded-md cursor-pointer
+          bg-danger-muted text-danger hover:bg-danger hover:text-white
+          disabled:bg-surface-elevated disabled:text-text-muted disabled:cursor-not-allowed
+          transition-colors duration-150"
       >
-        Delete
+        delete
       </button>
 
-      <div className="w-px h-6 bg-gray-300 mx-2" />
+      <div className="w-px h-5 bg-border mx-1" />
 
       <button
         onClick={() => setPreviewMode(!isPreviewMode)}
-        className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors
+        className={`px-3 py-1.5 text-sm font-medium font-mono rounded-md cursor-pointer
+          transition-colors duration-150
           ${
             isPreviewMode
-              ? 'bg-green-600 text-white hover:bg-green-700'
-              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              ? 'bg-success-muted text-success hover:bg-success hover:text-white'
+              : 'bg-surface-elevated text-text-secondary hover:text-text-primary'
           }`}
       >
-        {isPreviewMode ? 'Preview On' : 'Preview Off'}
+        {isPreviewMode ? '● preview' : '○ preview'}
       </button>
+
+      {/* Spacer */}
+      <div className="flex-1" />
+
+      {/* Status indicator */}
+      <span className="text-xs font-mono text-text-muted">
+        {selectedId ? `selected: ${selectedType}` : 'no selection'}
+      </span>
     </div>
   );
 }
