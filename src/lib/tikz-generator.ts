@@ -63,10 +63,17 @@ function generateStyles(settings: TreeSettings, maxDepth: number): string {
 function formatLabel(label: string, position: string): string {
   if (!label) return '';
 
-  // Escape special LaTeX chars but preserve math mode ($...$)
   let formatted = label;
-  if (!label.startsWith('$') || !label.endsWith('$')) {
-    // Not in math mode, wrap in braces
+  // Already in math mode
+  if (label.startsWith('$') && label.endsWith('$')) {
+    formatted = `{${label}}`;
+  }
+  // Contains LaTeX commands (backslash) - needs math mode
+  else if (label.includes('\\')) {
+    formatted = `{$${label}$}`;
+  }
+  // Plain text - wrap in braces
+  else {
     formatted = `{${label}}`;
   }
 
@@ -85,7 +92,8 @@ function generateNode(
   node: TreeNode,
   allNodes: TreeNode[],
   edgeMap: Map<string, TreeEdge>,
-  depth: number
+  depth: number,
+  isRoot: boolean = false
 ): string {
   const indent = '\t'.repeat(depth);
   const color = COLOR_MAP[node.color] || node.color;
@@ -94,13 +102,15 @@ function generateNode(
   // Find children sorted by their original order
   const children = allNodes.filter((n) => n.parentId === node.id);
 
-  let result = `${indent}\\node[dot=${color}${label}] {}`;
+  // Root node uses \node, children use node (no backslash) in TikZ tree syntax
+  const nodeCmd = isRoot ? '\\node' : 'node';
+  let result = `${indent}${nodeCmd}[dot=${color}${label}] {}`;
 
   if (children.length > 0) {
     result += '\n';
     for (const child of children) {
       const edge = edgeMap.get(child.id);
-      const childStr = generateNode(child, allNodes, edgeMap, depth + 1);
+      const childStr = generateNode(child, allNodes, edgeMap, depth + 1, false);
       const edgeLabel = edge ? generateEdgeLabel(edge) : '';
       result += `${indent}child {\n${childStr}${edgeLabel}\n${indent}}\n`;
     }
@@ -133,8 +143,8 @@ export function generateTikZ(diagram: TreeDiagram): string {
   // Generate styles
   const styles = generateStyles(settings, maxDepth);
 
-  // Generate tree recursively
-  const tree = generateNode(root, nodes, edgeMap, 1);
+  // Generate tree recursively (root uses \node, children use node)
+  const tree = generateNode(root, nodes, edgeMap, 1, true);
 
   return `\\begin{tikzpicture}[
 ${styles}
