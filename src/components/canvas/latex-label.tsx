@@ -53,6 +53,8 @@ export function LatexLabel({ text, x, y, position = 'above' }: LatexLabelProps) 
       width={80}
       height={30}
       style={{ overflow: 'visible' }}
+      data-original-text={text}
+      data-text-align={offset.anchor === 'end' ? 'right' : offset.anchor === 'start' ? 'left' : 'center'}
     >
       <div
         style={{

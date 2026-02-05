@@ -1,5 +1,43 @@
 // PNG export utility - render SVG to canvas and download
 
+// Convert foreignObject elements to native SVG text to avoid tainted canvas
+function convertForeignObjectsToSvgText(svg: SVGSVGElement) {
+  const foreignObjects = svg.querySelectorAll('foreignObject');
+  foreignObjects.forEach((fo) => {
+    const x = parseFloat(fo.getAttribute('x') || '0');
+    const y = parseFloat(fo.getAttribute('y') || '0');
+    const width = parseFloat(fo.getAttribute('width') || '80');
+
+    // Use data-original-text attribute (stores raw label before KaTeX rendering)
+    const originalText = fo.getAttribute('data-original-text') || '';
+    const textAlign = fo.getAttribute('data-text-align') || 'center';
+
+    // Create SVG text element
+    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    text.setAttribute('y', String(y + 15)); // Adjust for baseline
+    text.setAttribute('font-size', '14');
+    text.setAttribute('font-family', 'serif');
+    text.setAttribute('fill', '#000');
+
+    // Set x and anchor based on alignment
+    if (textAlign === 'right') {
+      text.setAttribute('x', String(x + width));
+      text.setAttribute('text-anchor', 'end');
+    } else if (textAlign === 'left') {
+      text.setAttribute('x', String(x));
+      text.setAttribute('text-anchor', 'start');
+    } else {
+      text.setAttribute('x', String(x + width / 2));
+      text.setAttribute('text-anchor', 'middle');
+    }
+
+    text.textContent = originalText;
+
+    // Replace foreignObject with text element
+    fo.parentNode?.replaceChild(text, fo);
+  });
+}
+
 export async function exportPng(
   svgElement: SVGSVGElement,
   filename = 'tree-diagram.png',
@@ -7,6 +45,9 @@ export async function exportPng(
 ) {
   // Clone SVG
   const clone = svgElement.cloneNode(true) as SVGSVGElement;
+
+  // Convert foreignObject elements to native SVG text (prevents tainted canvas)
+  convertForeignObjectsToSvgText(clone);
 
   // Get content bounds
   const group = svgElement.querySelector('g');
