@@ -84,10 +84,14 @@ export async function exportPng(
     const labelDiv = fo.querySelector('.latex-label');
 
     if (labelDiv && originalText) {
-      // Strip LaTeX commands to get plain text: \text{...} -> ..., \overline{X} -> X̄
+      // Strip LaTeX commands to get plain text: \text{...} -> ..., \overline{AB} -> A̅B̅
       let plainText = originalText
         .replace(/\\text\{([^}]*)\}/g, '$1')
-        .replace(/\\overline\{([^}]*)\}/g, '$1\u0304') // combining macron
+        .replace(/\\overline\{([^}]*)\}/g, (_, content) => {
+          // Apply combining overline (U+0305) to each character for proper overline display
+          return content.split('').map((char: string) => char + '\u0305').join('');
+        })
+        .replace(/\\bar\{([^}]*)\}/g, '$1\u0304') // \bar{X} -> X̄ (single char macron)
         .replace(/\\\\/g, '') // remove remaining backslashes
         .normalize('NFC'); // normalize Unicode
 
