@@ -1,16 +1,22 @@
 // SVG export utility - serialize SVG element with proper viewBox
+// Uses native SVG text elements for maximum compatibility (Inkscape, Illustrator, etc.)
 
 /**
- * Convert LaTeX commands to styled HTML for SVG export
- * Uses CSS text-decoration for overline (same as PNG export)
+ * Convert LaTeX commands to plain text for SVG export
+ * Returns { text, hasOverline } for native SVG rendering
  */
-function convertLatexToStyledHtml(latex: string): string {
+function convertLatexToPlainText(latex: string): { text: string; hasOverline: boolean } {
   let result = latex;
+  let hasOverline = false;
 
-  // Handle \overline{...} - wrap in span with CSS overline
-  result = result.replace(/\\overline\{([^}]*)\}/g, '<span style="text-decoration: overline; text-decoration-thickness: 1px;">$1</span>');
+  // Handle \overline{...} - extract content and mark for overline
+  const overlineMatch = result.match(/\\overline\{([^}]*)\}/);
+  if (overlineMatch) {
+    hasOverline = true;
+    result = result.replace(/\\overline\{([^}]*)\}/g, '$1');
+  }
 
-  // Handle \bar{X} - single character macron
+  // Handle \bar{X} - use combining macron for single chars
   result = result.replace(/\\bar\{([^}]*)\}/g, '$1\u0304');
 
   // Handle \text{...} - just extract content
@@ -19,16 +25,56 @@ function convertLatexToStyledHtml(latex: string): string {
   // Remove remaining backslashes from other LaTeX commands
   result = result.replace(/\\\\/g, '');
 
-  return result;
+  return { text: result, hasOverline };
+}
+
+/**
+ * Create native SVG text element to replace foreignObject
+ * This ensures compatibility with Inkscape, Illustrator, and other SVG editors
+ */
+function createSvgTextElement(
+  doc: Document,
+  text: string,
+  x: number,
+  y: number,
+  textAlign: string,
+  hasOverline: boolean
+): SVGTextElement {
+  const textEl = doc.createElementNS('http://www.w3.org/2000/svg', 'text');
+
+  // Set position - adjust y for text baseline
+  textEl.setAttribute('x', String(x));
+  textEl.setAttribute('y', String(y));
+
+  // Set text anchor based on alignment
+  const anchor = textAlign === 'right' ? 'end' : textAlign === 'left' ? 'start' : 'middle';
+  textEl.setAttribute('text-anchor', anchor);
+  textEl.setAttribute('dominant-baseline', 'middle');
+
+  // Set font styling - italic Times New Roman like the canvas
+  textEl.setAttribute('font-family', '"Times New Roman", Georgia, serif');
+  textEl.setAttribute('font-size', '14');
+  textEl.setAttribute('font-style', 'italic');
+  textEl.setAttribute('fill', '#000000');
+
+  // Add overline decoration if needed
+  if (hasOverline) {
+    textEl.setAttribute('text-decoration', 'overline');
+  }
+
+  textEl.textContent = text;
+
+  return textEl;
 }
 
 export function exportSvg(svgElement: SVGSVGElement, filename = 'tree-diagram.svg') {
   // Clone SVG to avoid modifying original
   const clone = svgElement.cloneNode(true) as SVGSVGElement;
+  const doc = clone.ownerDocument;
 
   // Calculate bounding box of content
   const bbox = calculateContentBounds(svgElement);
-  const padding = 20;
+  const padding = 40; // Increased padding for labels
 
   // Set viewBox to fit content with padding
   clone.setAttribute('viewBox',
@@ -43,7 +89,7 @@ export function exportSvg(svgElement: SVGSVGElement, filename = 'tree-diagram.sv
     mainGroup.removeAttribute('transform');
   }
 
-  // Remove grid pattern and background (first rect with url(#grid))
+  // Remove grid pattern and background
   const gridPattern = clone.querySelector('defs');
   if (gridPattern) {
     gridPattern.remove();
@@ -52,7 +98,6 @@ export function exportSvg(svgElement: SVGSVGElement, filename = 'tree-diagram.sv
   if (gridRect) {
     gridRect.remove();
   }
-  // Also remove dots pattern background
   const dotsRect = clone.querySelector('rect[fill="url(#dots)"]');
   if (dotsRect) {
     dotsRect.remove();
@@ -64,31 +109,42 @@ export function exportSvg(svgElement: SVGSVGElement, filename = 'tree-diagram.sv
     zoomText.remove();
   }
 
-  // Fix duplicate labels: Replace KaTeX content with simple styled HTML
-  // KaTeX renders both katex-html and katex-mathml, causing text duplication when serialized
+  // Replace foreignObject elements with native SVG text
+  // foreignObject is not supported by Inkscape and other desktop SVG editors
   const foreignObjects = clone.querySelectorAll('foreignObject');
   foreignObjects.forEach((fo) => {
     const originalText = fo.getAttribute('data-original-text') || '';
     const textAlign = fo.getAttribute('data-text-align') || 'center';
-    const labelDiv = fo.querySelector('.latex-label') || fo.querySelector('div');
 
-    if (labelDiv && originalText) {
-      // Convert LaTeX to styled HTML (same as PNG export)
-      const styledHtml = convertLatexToStyledHtml(originalText);
+    if (originalText) {
+      // Get foreignObject position and dimensions
+      const foX = parseFloat(fo.getAttribute('x') || '0');
+      const foY = parseFloat(fo.getAttribute('y') || '0');
+      const foWidth = parseFloat(fo.getAttribute('width') || '80');
+      const foHeight = parseFloat(fo.getAttribute('height') || '30');
 
-      // Replace KaTeX content with simple styled HTML to avoid duplication
-      (labelDiv as HTMLElement).innerHTML = styledHtml;
-      (labelDiv as HTMLElement).style.cssText = `
-        font-size: 14px;
-        font-family: "Times New Roman", Georgia, serif;
-        font-style: italic;
-        text-align: ${textAlign};
-        white-space: nowrap;
-        height: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: ${textAlign === 'right' ? 'flex-end' : textAlign === 'left' ? 'flex-start' : 'center'};
-      `;
+      // Calculate text position based on alignment
+      let textX: number;
+      if (textAlign === 'right') {
+        textX = foX + foWidth;
+      } else if (textAlign === 'left') {
+        textX = foX;
+      } else {
+        textX = foX + foWidth / 2;
+      }
+      const textY = foY + foHeight / 2;
+
+      // Convert LaTeX to plain text
+      const { text, hasOverline } = convertLatexToPlainText(originalText);
+
+      // Create native SVG text element
+      const textEl = createSvgTextElement(doc, text, textX, textY, textAlign, hasOverline);
+
+      // Replace foreignObject with text element
+      fo.parentNode?.replaceChild(textEl, fo);
+    } else {
+      // Remove empty foreignObjects
+      fo.remove();
     }
   });
 
