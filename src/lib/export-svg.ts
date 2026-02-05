@@ -29,8 +29,8 @@ function convertLatexToPlainText(latex: string): { text: string; hasOverline: bo
 }
 
 /**
- * Create native SVG text element to replace foreignObject
- * This ensures compatibility with Inkscape, Illustrator, and other SVG editors
+ * Create native SVG text element (or group with overline) to replace foreignObject
+ * Uses a line element for overline since text-decoration is not supported in Inkscape
  */
 function createSvgTextElement(
   doc: Document,
@@ -39,10 +39,10 @@ function createSvgTextElement(
   y: number,
   textAlign: string,
   hasOverline: boolean
-): SVGTextElement {
+): SVGElement {
   const textEl = doc.createElementNS('http://www.w3.org/2000/svg', 'text');
 
-  // Set position - adjust y for text baseline
+  // Set position
   textEl.setAttribute('x', String(x));
   textEl.setAttribute('y', String(y));
 
@@ -57,12 +57,42 @@ function createSvgTextElement(
   textEl.setAttribute('font-style', 'italic');
   textEl.setAttribute('fill', '#000000');
 
-  // Add overline decoration if needed
-  if (hasOverline) {
-    textEl.setAttribute('text-decoration', 'overline');
-  }
-
   textEl.textContent = text;
+
+  // If overline needed, create a group with text + line
+  if (hasOverline) {
+    const group = doc.createElementNS('http://www.w3.org/2000/svg', 'g');
+    group.appendChild(textEl);
+
+    // Create overline as a line element
+    // Estimate text width based on character count (approx 8px per char for 14px font)
+    const textWidth = text.length * 8;
+    const lineY = y - 9; // Position above text
+
+    // Calculate line start/end based on alignment
+    let lineX1: number, lineX2: number;
+    if (textAlign === 'right') {
+      lineX1 = x - textWidth;
+      lineX2 = x;
+    } else if (textAlign === 'left') {
+      lineX1 = x;
+      lineX2 = x + textWidth;
+    } else {
+      lineX1 = x - textWidth / 2;
+      lineX2 = x + textWidth / 2;
+    }
+
+    const line = doc.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', String(lineX1));
+    line.setAttribute('y1', String(lineY));
+    line.setAttribute('x2', String(lineX2));
+    line.setAttribute('y2', String(lineY));
+    line.setAttribute('stroke', '#000000');
+    line.setAttribute('stroke-width', '1');
+
+    group.appendChild(line);
+    return group;
+  }
 
   return textEl;
 }
