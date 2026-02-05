@@ -74,8 +74,8 @@ function formatLabel(label: string, position: string): string {
     return `, label=${position}:{$${label}$}`;
   }
 
-  // Plain text - wrap in braces only
-  return `, label=${position}:{${label}}`;
+  // Plain text - wrap in math mode
+  return `, label=${position}:{$${label}$}`;
 }
 
 // Generate edge label markup (returns just the edge statement, caller handles indentation)
