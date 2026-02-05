@@ -82,7 +82,7 @@ function formatLabel(label: string, position: string): string {
 function generateEdgeLabel(edge: TreeEdge): string {
   if (!edge.label) return '';
   const pos = edge.labelPosition === 'left' ? 'left=5pt' : 'right=5pt';
-  return `edge from parent node[${pos}] {${edge.label}}`;
+  return `edge from parent node[${pos}] {$${edge.label}$}`;
 }
 
 // Recursively generate node and children TikZ code
