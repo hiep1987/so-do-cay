@@ -2,6 +2,28 @@
 
 import html2canvas from 'html2canvas';
 
+/**
+ * Convert LaTeX commands to styled HTML for PNG export
+ * Uses CSS text-decoration: overline for continuous overline (instead of per-character combining chars)
+ */
+function convertLatexToStyledHtml(latex: string): string {
+  let result = latex;
+
+  // Handle \overline{...} - wrap in span with CSS overline for continuous line
+  result = result.replace(/\\overline\{([^}]*)\}/g, '<span style="text-decoration: overline; text-decoration-thickness: 1px;">$1</span>');
+
+  // Handle \bar{X} - single character macron (keep using combining char for single chars)
+  result = result.replace(/\\bar\{([^}]*)\}/g, '$1\u0304');
+
+  // Handle \text{...} - just extract content
+  result = result.replace(/\\text\{([^}]*)\}/g, '$1');
+
+  // Remove remaining backslashes from other LaTeX commands
+  result = result.replace(/\\\\/g, '');
+
+  return result;
+}
+
 export async function exportPng(
   svgElement: SVGSVGElement,
   filename = 'tree-diagram.png',
@@ -75,8 +97,8 @@ export async function exportPng(
     }
   });
 
-  // Replace KaTeX content with plain text for proper Vietnamese rendering
-  // KaTeX fonts don't support Vietnamese diacritics, so use original text with system fonts
+  // Replace KaTeX content with styled HTML for proper rendering
+  // KaTeX fonts don't support Vietnamese diacritics, so use styled HTML with system fonts
   const foreignObjects = clone.querySelectorAll('foreignObject');
   foreignObjects.forEach((fo) => {
     const originalText = fo.getAttribute('data-original-text') || '';
@@ -85,20 +107,11 @@ export async function exportPng(
     const labelDiv = fo.querySelector('.latex-label') || fo.querySelector('div');
 
     if (labelDiv && originalText) {
-      // Strip LaTeX commands to get plain text: \text{...} -> ..., \overline{AB} -> A̅B̅
-      let plainText = originalText
-        .replace(/\\text\{([^}]*)\}/g, '$1')
-        .replace(/\\overline\{([^}]*)\}/g, (_, content) => {
-          // Apply combining overline (U+0305) to each character for proper overline display
-          return content.split('').map((char: string) => char + '\u0305').join('');
-        })
-        .replace(/\\bar\{([^}]*)\}/g, '$1\u0304') // \bar{X} -> X̄ (single char macron)
-        .replace(/\\\\/g, '') // remove remaining backslashes
-        .normalize('NFC'); // normalize Unicode
+      // Convert LaTeX to styled HTML: \overline{AB} uses CSS text-decoration for continuous line
+      const styledHtml = convertLatexToStyledHtml(originalText);
 
-      // Clear existing KaTeX content completely before setting new content
-      (labelDiv as HTMLElement).innerHTML = '';
-      (labelDiv as HTMLElement).textContent = plainText;
+      // Clear existing KaTeX content and set styled HTML
+      (labelDiv as HTMLElement).innerHTML = styledHtml;
       (labelDiv as HTMLElement).style.cssText = `
         font-size: 16px !important;
         font-family: "Times New Roman", Georgia, serif !important;
