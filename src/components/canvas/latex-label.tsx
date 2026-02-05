@@ -17,8 +17,8 @@ interface LatexLabelProps {
 const POSITION_OFFSETS: Record<string, { dx: number; dy: number; anchor: string }> = {
   above: { dx: 0, dy: -15, anchor: 'middle' },
   below: { dx: 0, dy: 20, anchor: 'middle' },
-  left: { dx: -10, dy: 5, anchor: 'end' },
-  right: { dx: 10, dy: 5, anchor: 'start' },
+  left: { dx: -10, dy: 0, anchor: 'end' },
+  right: { dx: 10, dy: 0, anchor: 'start' },
 };
 
 export function LatexLabel({ text, x, y, position = 'above' }: LatexLabelProps) {
@@ -41,10 +41,14 @@ export function LatexLabel({ text, x, y, position = 'above' }: LatexLabelProps) 
   if (!text) return null;
 
   // Calculate foreignObject position based on anchor
+  // Center horizontally based on anchor, center vertically for left/right positions
   const foX = offset.anchor === 'end' ? x + offset.dx - 80
             : offset.anchor === 'start' ? x + offset.dx
             : x + offset.dx - 40;
-  const foY = y + offset.dy - 10;
+  // For left/right positions, center label vertically relative to node
+  const foY = (position === 'left' || position === 'right')
+            ? y - 15  // Center the 30px height foreignObject on node center
+            : y + offset.dy - 10;
 
   return (
     <foreignObject
@@ -64,6 +68,12 @@ export function LatexLabel({ text, x, y, position = 'above' }: LatexLabelProps) 
                    : offset.anchor === 'start' ? 'left'
                    : 'center',
           whiteSpace: 'nowrap',
+          height: '100%',
+          display: 'flex',
+          alignItems: (position === 'left' || position === 'right') ? 'center' : 'flex-start',
+          justifyContent: offset.anchor === 'end' ? 'flex-end'
+                        : offset.anchor === 'start' ? 'flex-start'
+                        : 'center',
         }}
         dangerouslySetInnerHTML={{ __html: html }}
       />
