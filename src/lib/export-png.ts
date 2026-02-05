@@ -81,7 +81,8 @@ export async function exportPng(
   foreignObjects.forEach((fo) => {
     const originalText = fo.getAttribute('data-original-text') || '';
     const textAlign = fo.getAttribute('data-text-align') || 'center';
-    const labelDiv = fo.querySelector('.latex-label');
+    // Find the label div - either with .latex-label class or direct child div
+    const labelDiv = fo.querySelector('.latex-label') || fo.querySelector('div');
 
     if (labelDiv && originalText) {
       // Strip LaTeX commands to get plain text: \text{...} -> ..., \overline{AB} -> A̅B̅
@@ -95,7 +96,9 @@ export async function exportPng(
         .replace(/\\\\/g, '') // remove remaining backslashes
         .normalize('NFC'); // normalize Unicode
 
-      (labelDiv as HTMLElement).innerHTML = `<span style="color: #000000 !important; opacity: 1 !important;">${plainText}</span>`;
+      // Clear existing KaTeX content completely before setting new content
+      (labelDiv as HTMLElement).innerHTML = '';
+      (labelDiv as HTMLElement).textContent = plainText;
       (labelDiv as HTMLElement).style.cssText = `
         font-size: 16px !important;
         font-family: "Times New Roman", Georgia, serif !important;

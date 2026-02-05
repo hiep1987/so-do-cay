@@ -57,6 +57,7 @@ export function LatexLabel({ text, x, y, position = 'above' }: LatexLabelProps) 
       data-text-align={offset.anchor === 'end' ? 'right' : offset.anchor === 'start' ? 'left' : 'center'}
     >
       <div
+        className="latex-label"
         style={{
           fontSize: '14px',
           textAlign: offset.anchor === 'end' ? 'right'
