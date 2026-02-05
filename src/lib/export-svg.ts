@@ -102,6 +102,10 @@ export function exportSvg(svgElement: SVGSVGElement, filename = 'tree-diagram.sv
   const clone = svgElement.cloneNode(true) as SVGSVGElement;
   const doc = clone.ownerDocument;
 
+  // Remove background color style (canvas dark mode color)
+  clone.style.backgroundColor = '';
+  clone.removeAttribute('style');
+
   // Calculate bounding box of content
   const bbox = calculateContentBounds(svgElement);
   const padding = 40; // Increased padding for labels
