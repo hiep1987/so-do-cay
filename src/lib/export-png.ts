@@ -15,16 +15,30 @@ export async function exportPng(
   const width = bbox.width + padding * 2;
   const height = bbox.height + padding * 2;
 
-  // Create a container for export
+  // Create a container for export with explicit black text color
   const container = document.createElement('div');
-  container.style.position = 'fixed';
-  container.style.left = '0';
-  container.style.top = '0';
-  container.style.width = `${width}px`;
-  container.style.height = `${height}px`;
-  container.style.backgroundColor = 'white';
-  container.style.zIndex = '9999';
-  container.style.overflow = 'hidden';
+  container.style.cssText = `
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: ${width}px;
+    height: ${height}px;
+    background-color: white;
+    z-index: 9999;
+    overflow: hidden;
+    color: #000000 !important;
+  `;
+
+  // Add style element to force black text color on all descendants
+  const styleEl = document.createElement('style');
+  styleEl.textContent = `
+    #export-container, #export-container * {
+      color: #000000 !important;
+      opacity: 1 !important;
+    }
+  `;
+  container.id = 'export-container';
+  container.appendChild(styleEl);
 
   // Clone the SVG
   const clone = svgElement.cloneNode(true) as SVGSVGElement;
@@ -61,17 +75,33 @@ export async function exportPng(
     }
   });
 
-  // Set text color to black for export (canvas has white text on dark bg)
-  const labels = clone.querySelectorAll('.latex-label');
-  labels.forEach((label) => {
-    (label as HTMLElement).style.color = '#000000';
-  });
+  // Replace KaTeX content with plain text for proper Vietnamese rendering
+  // KaTeX fonts don't support Vietnamese diacritics, so use original text with system fonts
+  const foreignObjects = clone.querySelectorAll('foreignObject');
+  foreignObjects.forEach((fo) => {
+    const originalText = fo.getAttribute('data-original-text') || '';
+    const textAlign = fo.getAttribute('data-text-align') || 'center';
+    const labelDiv = fo.querySelector('.latex-label');
 
-  // Hide KaTeX MathML elements to prevent duplicate text in export
-  // KaTeX renders both HTML and MathML for accessibility, but html2canvas captures both
-  const mathmlElements = clone.querySelectorAll('.katex-mathml');
-  mathmlElements.forEach((el) => {
-    (el as HTMLElement).style.display = 'none';
+    if (labelDiv && originalText) {
+      // Strip LaTeX commands to get plain text: \text{...} -> ..., \overline{X} -> X̄
+      let plainText = originalText
+        .replace(/\\text\{([^}]*)\}/g, '$1')
+        .replace(/\\overline\{([^}]*)\}/g, '$1\u0304') // combining macron
+        .replace(/\\\\/g, '') // remove remaining backslashes
+        .normalize('NFC'); // normalize Unicode
+
+      (labelDiv as HTMLElement).innerHTML = `<span style="color: #000000 !important; opacity: 1 !important;">${plainText}</span>`;
+      (labelDiv as HTMLElement).style.cssText = `
+        font-size: 16px !important;
+        font-family: "Times New Roman", Georgia, serif !important;
+        font-style: italic !important;
+        color: #000000 !important;
+        text-align: ${textAlign} !important;
+        white-space: nowrap !important;
+        opacity: 1 !important;
+      `;
+    }
   });
 
   container.appendChild(clone);
