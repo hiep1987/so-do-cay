@@ -122,9 +122,11 @@ export const TreeCanvas = forwardRef<TreeCanvasRef>(function TreeCanvas(_, ref) 
     }
   }, [view]);
 
-  // Handle pan start
+  // Handle pan start - allow dragging on SVG background or rect elements
   const handleMouseDown = useCallback((e: MouseEvent<SVGSVGElement>) => {
-    if (e.button === 0 && e.target === svgRef.current) {
+    const target = e.target as Element;
+    const isBackground = target === svgRef.current || target.tagName.toLowerCase() === 'rect';
+    if (e.button === 0 && isBackground) {
       setIsDragging(true);
       setDragStart({ x: e.clientX - view.x, y: e.clientY - view.y });
     }
