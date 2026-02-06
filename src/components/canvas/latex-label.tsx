@@ -11,6 +11,10 @@ interface LatexLabelProps {
   x: number;
   y: number;
   position?: 'above' | 'below' | 'left' | 'right';
+  // Transform props for Safari foreignObject fix
+  viewX?: number;
+  viewY?: number;
+  scale?: number;
 }
 
 // Offsets for label positioning relative to anchor point
@@ -21,7 +25,7 @@ const POSITION_OFFSETS: Record<string, { dx: number; dy: number; anchor: string 
   right: { dx: 10, dy: 0, anchor: 'start' },
 };
 
-export function LatexLabel({ text, x, y, position = 'above' }: LatexLabelProps) {
+export function LatexLabel({ text, x, y, position = 'above', viewX = 0, viewY = 0, scale = 1 }: LatexLabelProps) {
   const offset = POSITION_OFFSETS[position];
 
   // Render LaTeX, fallback to plain text if parsing fails
@@ -40,15 +44,21 @@ export function LatexLabel({ text, x, y, position = 'above' }: LatexLabelProps) 
 
   if (!text) return null;
 
+  // Apply transform manually for Safari foreignObject compatibility
+  const transformedX = x * scale + viewX;
+  const transformedY = y * scale + viewY;
+
   // Calculate foreignObject position based on anchor
-  // Center horizontally based on anchor, center vertically for left/right positions
-  const foX = offset.anchor === 'end' ? x + offset.dx - 80
-            : offset.anchor === 'start' ? x + offset.dx
-            : x + offset.dx - 40;
+  const foX = offset.anchor === 'end' ? transformedX + offset.dx * scale - 80
+            : offset.anchor === 'start' ? transformedX + offset.dx * scale
+            : transformedX + offset.dx * scale - 40;
   // For left/right positions, center label vertically relative to node
   const foY = (position === 'left' || position === 'right')
-            ? y - 15  // Center the 30px height foreignObject on node center
-            : y + offset.dy - 10;
+            ? transformedY - 15 * scale
+            : transformedY + offset.dy * scale - 10;
+
+  // Scale font size with zoom
+  const fontSize = 14 * scale;
 
   return (
     <foreignObject
@@ -56,27 +66,36 @@ export function LatexLabel({ text, x, y, position = 'above' }: LatexLabelProps) 
       y={foY}
       width={80}
       height={30}
-      style={{ overflow: 'visible' }}
+      style={{ overflow: 'visible', pointerEvents: 'none' }}
       data-original-text={text}
       data-text-align={offset.anchor === 'end' ? 'right' : offset.anchor === 'start' ? 'left' : 'center'}
     >
+      {/* Wrapper div with explicit position to fix Safari foreignObject transform bug */}
       <div
-        className="latex-label"
         style={{
-          fontSize: '14px',
-          textAlign: offset.anchor === 'end' ? 'right'
-                   : offset.anchor === 'start' ? 'left'
-                   : 'center',
-          whiteSpace: 'nowrap',
+          position: 'relative',
+          width: '100%',
           height: '100%',
-          display: 'flex',
-          alignItems: (position === 'left' || position === 'right') ? 'center' : 'flex-start',
-          justifyContent: offset.anchor === 'end' ? 'flex-end'
-                        : offset.anchor === 'start' ? 'flex-start'
-                        : 'center',
         }}
-        dangerouslySetInnerHTML={{ __html: html }}
-      />
+      >
+        <div
+          className="latex-label"
+          style={{
+            fontSize: `${fontSize}px`,
+            textAlign: offset.anchor === 'end' ? 'right'
+                     : offset.anchor === 'start' ? 'left'
+                     : 'center',
+            whiteSpace: 'nowrap',
+            height: '100%',
+            display: 'flex',
+            alignItems: (position === 'left' || position === 'right') ? 'center' : 'flex-start',
+            justifyContent: offset.anchor === 'end' ? 'flex-end'
+                          : offset.anchor === 'start' ? 'flex-start'
+                          : 'center',
+          }}
+          dangerouslySetInnerHTML={{ __html: html }}
+        />
+      </div>
     </foreignObject>
   );
 }

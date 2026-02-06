@@ -2,11 +2,12 @@
 
 // SVG canvas component with pan/zoom and tree rendering - dark mode developer tool aesthetic
 
-import { useRef, useState, useCallback, useEffect, forwardRef, useImperativeHandle, type MouseEvent, type WheelEvent } from 'react';
+import { useRef, useState, useCallback, useEffect, forwardRef, useImperativeHandle, type MouseEvent, type WheelEvent, type TouchEvent } from 'react';
 import { useTreeStore } from '@/hooks/use-tree-store';
 import { useTreeLayout } from '@/hooks/use-tree-layout';
 import { TreeNodeComponent } from './tree-node';
 import { TreeEdgeComponent } from './tree-edge';
+import { LatexLabel } from './latex-label';
 
 interface ViewState {
   x: number;
@@ -47,6 +48,8 @@ export const TreeCanvas = forwardRef<TreeCanvasRef>(function TreeCanvas(_, ref) 
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [hasInitializedView, setHasInitializedView] = useState(false);
+  // Touch state for two-finger panning
+  const [touchStart, setTouchStart] = useState<{ x: number; y: number } | null>(null);
 
   // Expose SVG element to parent for export functionality
   useImperativeHandle(ref, () => ({
@@ -152,6 +155,33 @@ export const TreeCanvas = forwardRef<TreeCanvasRef>(function TreeCanvas(_, ref) 
     setIsDragging(false);
   }, []);
 
+  // Two-finger touch panning for mobile
+  const handleTouchStart = useCallback((e: TouchEvent<SVGSVGElement>) => {
+    if (e.touches.length === 2) {
+      e.preventDefault();
+      const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+      const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+      setTouchStart({ x: midX - view.x, y: midY - view.y });
+    }
+  }, [view.x, view.y]);
+
+  const handleTouchMove = useCallback((e: TouchEvent<SVGSVGElement>) => {
+    if (e.touches.length === 2 && touchStart) {
+      e.preventDefault();
+      const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+      const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+      setView((prev) => ({
+        ...prev,
+        x: midX - touchStart.x,
+        y: midY - touchStart.y,
+      }));
+    }
+  }, [touchStart]);
+
+  const handleTouchEnd = useCallback(() => {
+    setTouchStart(null);
+  }, []);
+
   // Background click to deselect (only if not in preview mode)
   const handleBackgroundClick = useCallback(() => {
     if (!isPreviewMode) {
@@ -181,13 +211,16 @@ export const TreeCanvas = forwardRef<TreeCanvasRef>(function TreeCanvas(_, ref) 
   return (
     <svg
       ref={svgRef}
-      className="w-full h-full cursor-grab active:cursor-grabbing"
+      className="w-full h-full cursor-grab active:cursor-grabbing touch-none"
       style={{ backgroundColor: '#0F172A' }}
       onWheel={handleWheel}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseLeave}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
       onClick={handleBackgroundClick}
     >
       {/* Grid background - dark mode */}
@@ -261,6 +294,50 @@ export const TreeCanvas = forwardRef<TreeCanvasRef>(function TreeCanvas(_, ref) 
           );
         })}
       </g>
+
+      {/* Labels rendered outside transform group for Safari foreignObject compatibility */}
+      {/* Edge labels */}
+      {edges.map((edge) => {
+        const sourcePos = positions.get(edge.sourceId);
+        const targetPos = positions.get(edge.targetId);
+        if (!sourcePos || !targetPos || !edge.label) return null;
+
+        const midX = (sourcePos.x + targetPos.x) / 2;
+        const midY = (sourcePos.y + targetPos.y) / 2;
+        const labelOffset = edge.labelPosition === 'left' ? -15 : 15;
+
+        return (
+          <LatexLabel
+            key={`label-${edge.id}`}
+            text={edge.label}
+            x={midX + labelOffset}
+            y={midY}
+            position={edge.labelPosition === 'left' ? 'left' : 'right'}
+            viewX={view.x}
+            viewY={view.y}
+            scale={view.scale}
+          />
+        );
+      })}
+
+      {/* Node labels */}
+      {nodes.map((node) => {
+        const pos = positions.get(node.id);
+        if (!pos || !node.label) return null;
+
+        return (
+          <LatexLabel
+            key={`label-${node.id}`}
+            text={node.label}
+            x={pos.x}
+            y={pos.y}
+            position={node.labelPosition}
+            viewX={view.x}
+            viewY={view.y}
+            scale={view.scale}
+          />
+        );
+      })}
 
       {/* Zoom indicator - dark mode */}
       <text

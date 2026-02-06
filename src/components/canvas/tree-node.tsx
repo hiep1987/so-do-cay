@@ -2,10 +2,10 @@
 
 // Tree node component - renders colored circle with label
 // Supports click to select, double-click to add child
+// Note: Labels are rendered separately via TreeCanvas for Safari foreignObject compatibility
 
 import type { TreeNode } from '@/types/tree';
 import type { MouseEvent } from 'react';
-import { LatexLabel } from './latex-label';
 import { getColorHex } from '@/constants/colors';
 
 interface TreeNodeComponentProps {
@@ -50,16 +50,6 @@ export function TreeNodeComponent({
         stroke={isSelected ? '#3b82f6' : 'none'}
         strokeWidth={isSelected ? 3 : 0}
       />
-
-      {/* Node label */}
-      {node.label && (
-        <LatexLabel
-          text={node.label}
-          x={x}
-          y={y}
-          position={node.labelPosition}
-        />
-      )}
     </g>
   );
 }

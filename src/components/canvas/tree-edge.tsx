@@ -2,10 +2,10 @@
 
 // Tree edge component - renders line between nodes with probability label
 // Has invisible wider hit area for easier clicking
+// Note: Labels are rendered separately via TreeCanvas for Safari foreignObject compatibility
 
 import type { TreeEdge } from '@/types/tree';
 import type { MouseEvent } from 'react';
-import { LatexLabel } from './latex-label';
 
 interface TreeEdgeComponentProps {
   edge: TreeEdge;
@@ -26,13 +26,6 @@ export function TreeEdgeComponent({
   isSelected = false,
   onClick,
 }: TreeEdgeComponentProps) {
-  // Calculate midpoint for label placement
-  const midX = (x1 + x2) / 2;
-  const midY = (y1 + y2) / 2;
-
-  // Offset label slightly based on position
-  const labelOffset = edge.labelPosition === 'left' ? -15 : 15;
-
   const handleClick = (e: MouseEvent) => {
     e.stopPropagation();
     onClick?.();
@@ -58,16 +51,6 @@ export function TreeEdgeComponent({
         stroke={isSelected ? '#2563eb' : '#374151'}
         strokeWidth={isSelected ? 2.5 : 1.5}
       />
-
-      {/* Edge label (probability) */}
-      {edge.label && (
-        <LatexLabel
-          text={edge.label}
-          x={midX + labelOffset}
-          y={midY}
-          position={edge.labelPosition === 'left' ? 'left' : 'right'}
-        />
-      )}
     </g>
   );
 }
