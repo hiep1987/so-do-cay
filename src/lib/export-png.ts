@@ -1,18 +1,24 @@
-// PNG export utility using html2canvas for proper KaTeX/foreignObject rendering
+// PNG export utility using html2canvas
+// Replaces foreignObject with native SVG text for Safari compatibility
 
 import html2canvas from 'html2canvas';
 
 /**
- * Convert LaTeX commands to styled HTML for PNG export
- * Uses CSS text-decoration: overline for continuous overline (instead of per-character combining chars)
+ * Convert LaTeX commands to plain text for SVG export
+ * Returns { text, hasOverline } for native SVG rendering
  */
-function convertLatexToStyledHtml(latex: string): string {
+function convertLatexToPlainText(latex: string): { text: string; hasOverline: boolean } {
   let result = latex;
+  let hasOverline = false;
 
-  // Handle \overline{...} - wrap in span with CSS overline for continuous line
-  result = result.replace(/\\overline\{([^}]*)\}/g, '<span style="text-decoration: overline; text-decoration-thickness: 1px;">$1</span>');
+  // Handle \overline{...} - extract content and mark for overline
+  const overlineMatch = result.match(/\\overline\{([^}]*)\}/);
+  if (overlineMatch) {
+    hasOverline = true;
+    result = result.replace(/\\overline\{([^}]*)\}/g, '$1');
+  }
 
-  // Handle \bar{X} - single character macron (keep using combining char for single chars)
+  // Handle \bar{X} - use combining macron for single chars
   result = result.replace(/\\bar\{([^}]*)\}/g, '$1\u0304');
 
   // Handle \text{...} - just extract content
@@ -21,7 +27,87 @@ function convertLatexToStyledHtml(latex: string): string {
   // Remove remaining backslashes from other LaTeX commands
   result = result.replace(/\\\\/g, '');
 
-  return result;
+  return { text: result, hasOverline };
+}
+
+/**
+ * Create native SVG text element to replace foreignObject
+ * This avoids Safari's foreignObject rendering bugs
+ */
+function createSvgTextElement(
+  doc: Document,
+  text: string,
+  x: number,
+  y: number,
+  textAlign: string,
+  hasOverline: boolean
+): SVGElement {
+  const textEl = doc.createElementNS('http://www.w3.org/2000/svg', 'text');
+
+  // Adjust position: foreignObject has width=80, height=30
+  // Text needs to be positioned at center of that box
+  let textX = x + 40; // center of 80px width
+  const textY = y + 15; // center of 30px height
+
+  // Adjust X based on alignment
+  if (textAlign === 'right') {
+    textX = x + 80; // right edge
+  } else if (textAlign === 'left') {
+    textX = x; // left edge
+  }
+
+  textEl.setAttribute('x', String(textX));
+  textEl.setAttribute('y', String(textY));
+
+  // Set text anchor based on alignment
+  const anchor = textAlign === 'right' ? 'end' : textAlign === 'left' ? 'start' : 'middle';
+  textEl.setAttribute('text-anchor', anchor);
+  textEl.setAttribute('dominant-baseline', 'middle');
+
+  // Set font styling - italic Times New Roman
+  textEl.setAttribute('font-family', '"Times New Roman", Georgia, serif');
+  textEl.setAttribute('font-size', '16');
+  textEl.setAttribute('font-style', 'italic');
+  textEl.setAttribute('fill', '#000000');
+
+  textEl.textContent = text;
+
+  // If overline needed, create a group with text + line
+  if (hasOverline) {
+    const group = doc.createElementNS('http://www.w3.org/2000/svg', 'g');
+    group.appendChild(textEl);
+
+    // Create overline as a line element
+    // Estimate text width based on character count (approx 9px per char for 16px font)
+    const textWidth = text.length * 9;
+    const lineY = textY - 10; // Position above text
+
+    // Calculate line start/end based on alignment
+    let lineX1: number, lineX2: number;
+    if (textAlign === 'right') {
+      lineX1 = textX - textWidth;
+      lineX2 = textX;
+    } else if (textAlign === 'left') {
+      lineX1 = textX;
+      lineX2 = textX + textWidth;
+    } else {
+      lineX1 = textX - textWidth / 2;
+      lineX2 = textX + textWidth / 2;
+    }
+
+    const lineEl = doc.createElementNS('http://www.w3.org/2000/svg', 'line');
+    lineEl.setAttribute('x1', String(lineX1));
+    lineEl.setAttribute('y1', String(lineY));
+    lineEl.setAttribute('x2', String(lineX2));
+    lineEl.setAttribute('y2', String(lineY));
+    lineEl.setAttribute('stroke', '#000000');
+    lineEl.setAttribute('stroke-width', '1');
+    group.appendChild(lineEl);
+
+    return group;
+  }
+
+  return textEl;
 }
 
 export async function exportPng(
@@ -37,7 +123,7 @@ export async function exportPng(
   const width = bbox.width + padding * 2;
   const height = bbox.height + padding * 2;
 
-  // Create a container for export with explicit black text color
+  // Create a container for export
   const container = document.createElement('div');
   container.style.cssText = `
     position: fixed;
@@ -48,19 +134,8 @@ export async function exportPng(
     background-color: white;
     z-index: 9999;
     overflow: hidden;
-    color: #000000 !important;
-  `;
-
-  // Add style element to force black text color on all descendants
-  const styleEl = document.createElement('style');
-  styleEl.textContent = `
-    #export-container, #export-container * {
-      color: #000000 !important;
-      opacity: 1 !important;
-    }
   `;
   container.id = 'export-container';
-  container.appendChild(styleEl);
 
   // Clone the SVG
   const clone = svgElement.cloneNode(true) as SVGSVGElement;
@@ -78,12 +153,41 @@ export async function exportPng(
     cloneGroup.removeAttribute('transform');
   }
 
+  // Replace foreignObjects with native SVG text elements
+  // This avoids Safari's buggy foreignObject rendering
+  const foreignObjects = Array.from(clone.querySelectorAll('foreignObject'));
+  foreignObjects.forEach((fo) => {
+    const originalText = fo.getAttribute('data-original-text') || '';
+    const textAlign = fo.getAttribute('data-text-align') || 'center';
+    const contentX = parseFloat(fo.getAttribute('data-content-x') || '0');
+    const contentY = parseFloat(fo.getAttribute('data-content-y') || '0');
+
+    if (originalText) {
+      const { text, hasOverline } = convertLatexToPlainText(originalText);
+      const textElement = createSvgTextElement(
+        document,
+        text,
+        contentX,
+        contentY,
+        textAlign,
+        hasOverline
+      );
+
+      // Insert text element into main group
+      if (cloneGroup) {
+        cloneGroup.appendChild(textElement);
+      }
+    }
+
+    // Remove the foreignObject
+    fo.remove();
+  });
+
   // Remove grid pattern and background
   const gridPattern = clone.querySelector('defs');
   if (gridPattern) {
     gridPattern.remove();
   }
-  // Remove both grid and dots pattern backgrounds
   const backgroundRects = clone.querySelectorAll('rect[fill^="url(#"]');
   backgroundRects.forEach((rect) => {
     rect.remove();
@@ -94,33 +198,6 @@ export async function exportPng(
   texts.forEach((text) => {
     if (text.textContent?.includes('%')) {
       text.remove();
-    }
-  });
-
-  // Replace KaTeX content with styled HTML for proper rendering
-  // KaTeX fonts don't support Vietnamese diacritics, so use styled HTML with system fonts
-  const foreignObjects = clone.querySelectorAll('foreignObject');
-  foreignObjects.forEach((fo) => {
-    const originalText = fo.getAttribute('data-original-text') || '';
-    const textAlign = fo.getAttribute('data-text-align') || 'center';
-    // Find the label div - either with .latex-label class or direct child div
-    const labelDiv = fo.querySelector('.latex-label') || fo.querySelector('div');
-
-    if (labelDiv && originalText) {
-      // Convert LaTeX to styled HTML: \overline{AB} uses CSS text-decoration for continuous line
-      const styledHtml = convertLatexToStyledHtml(originalText);
-
-      // Clear existing KaTeX content and set styled HTML
-      (labelDiv as HTMLElement).innerHTML = styledHtml;
-      (labelDiv as HTMLElement).style.cssText = `
-        font-size: 16px !important;
-        font-family: "Times New Roman", Georgia, serif !important;
-        font-style: italic !important;
-        color: #000000 !important;
-        text-align: ${textAlign} !important;
-        white-space: nowrap !important;
-        opacity: 1 !important;
-      `;
     }
   });
 

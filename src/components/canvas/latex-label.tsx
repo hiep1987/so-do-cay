@@ -60,6 +60,15 @@ export function LatexLabel({ text, x, y, position = 'above', viewX = 0, viewY = 
   // Scale font size with zoom
   const fontSize = 14 * scale;
 
+  // Store original content position for export (before transform applied)
+  // Export will use these to recalculate position with scale=1, viewX=0, viewY=0
+  const contentFoX = offset.anchor === 'end' ? x + offset.dx - 80
+                   : offset.anchor === 'start' ? x + offset.dx
+                   : x + offset.dx - 40;
+  const contentFoY = (position === 'left' || position === 'right')
+                   ? y - 15
+                   : y + offset.dy - 10;
+
   return (
     <foreignObject
       x={foX}
@@ -69,6 +78,8 @@ export function LatexLabel({ text, x, y, position = 'above', viewX = 0, viewY = 
       style={{ overflow: 'visible', pointerEvents: 'none' }}
       data-original-text={text}
       data-text-align={offset.anchor === 'end' ? 'right' : offset.anchor === 'start' ? 'left' : 'center'}
+      data-content-x={contentFoX}
+      data-content-y={contentFoY}
     >
       {/* Wrapper div with explicit position to fix Safari foreignObject transform bug */}
       <div
