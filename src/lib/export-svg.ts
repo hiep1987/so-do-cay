@@ -108,14 +108,15 @@ export function exportSvg(svgElement: SVGSVGElement, filename = 'tree-diagram.sv
 
   // Calculate bounding box of content
   const bbox = calculateContentBounds(svgElement);
-  const padding = 40; // Increased padding for labels
+  const padding = 40; // Padding for labels
+  const bottomPadding = 60; // Extra padding for bottom labels
 
   // Set viewBox to fit content with padding
   clone.setAttribute('viewBox',
-    `${bbox.x - padding} ${bbox.y - padding} ${bbox.width + padding * 2} ${bbox.height + padding * 2}`
+    `${bbox.x - padding} ${bbox.y - padding} ${bbox.width + padding * 2} ${bbox.height + padding + bottomPadding}`
   );
   clone.setAttribute('width', String(bbox.width + padding * 2));
-  clone.setAttribute('height', String(bbox.height + padding * 2));
+  clone.setAttribute('height', String(bbox.height + padding + bottomPadding));
 
   // Remove transform from main group (reset pan/zoom)
   const mainGroup = clone.querySelector('g');
@@ -151,22 +152,22 @@ export function exportSvg(svgElement: SVGSVGElement, filename = 'tree-diagram.sv
     const textAlign = fo.getAttribute('data-text-align') || 'center';
 
     if (originalText) {
-      // Get foreignObject position and dimensions
-      const foX = parseFloat(fo.getAttribute('x') || '0');
-      const foY = parseFloat(fo.getAttribute('y') || '0');
-      const foWidth = parseFloat(fo.getAttribute('width') || '80');
-      const foHeight = parseFloat(fo.getAttribute('height') || '30');
+      // Use pre-calculated content coordinates (stored in latex-label.tsx)
+      const contentX = parseFloat(fo.getAttribute('data-content-x') || '0');
+      const contentY = parseFloat(fo.getAttribute('data-content-y') || '0');
+      const foWidth = 80;
+      const foHeight = 30;
 
       // Calculate text position based on alignment
       let textX: number;
       if (textAlign === 'right') {
-        textX = foX + foWidth;
+        textX = contentX + foWidth;
       } else if (textAlign === 'left') {
-        textX = foX;
+        textX = contentX;
       } else {
-        textX = foX + foWidth / 2;
+        textX = contentX + foWidth / 2;
       }
-      const textY = foY + foHeight / 2;
+      const textY = contentY + foHeight / 2;
 
       // Convert LaTeX to plain text
       const { text, hasOverline } = convertLatexToPlainText(originalText);
@@ -174,8 +175,11 @@ export function exportSvg(svgElement: SVGSVGElement, filename = 'tree-diagram.sv
       // Create native SVG text element
       const textEl = createSvgTextElement(doc, text, textX, textY, textAlign, hasOverline);
 
-      // Replace foreignObject with text element
-      fo.parentNode?.replaceChild(textEl, fo);
+      // Insert into main group and remove foreignObject
+      if (mainGroup) {
+        mainGroup.appendChild(textEl);
+      }
+      fo.remove();
     } else {
       // Remove empty foreignObjects
       fo.remove();
