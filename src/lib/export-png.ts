@@ -119,9 +119,10 @@ export async function exportPng(
   const group = svgElement.querySelector('g');
   const bbox = group?.getBBox() || new DOMRect(0, 0, 800, 600);
   const padding = 20;
+  const bottomPadding = 40; // Extra padding for bottom labels (below leaf nodes)
 
   const width = bbox.width + padding * 2;
-  const height = bbox.height + padding * 2;
+  const height = bbox.height + padding + bottomPadding;
 
   // Create a container for export
   const container = document.createElement('div');
