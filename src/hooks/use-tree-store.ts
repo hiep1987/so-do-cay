@@ -123,12 +123,36 @@ export const useTreeStore = create<TreeStore>((set, get) => ({
       edges: state.edges.map((e) => (e.id === id ? { ...e, ...updates } : e)),
     })),
 
+  // Cascade delete - removes edge and target node with all descendants
   deleteEdge: (id) =>
-    set((state) => ({
-      edges: state.edges.filter((e) => e.id !== id),
-      selectedId: state.selectedId === id ? null : state.selectedId,
-      selectedType: state.selectedId === id ? null : state.selectedType,
-    })),
+    set((state) => {
+      const edge = state.edges.find((e) => e.id === id);
+      if (!edge) {
+        return {
+          selectedId: state.selectedId === id ? null : state.selectedId,
+          selectedType: state.selectedId === id ? null : state.selectedType,
+        };
+      }
+
+      // Get target node and all its descendants
+      const targetId = edge.targetId;
+      const idsToDelete = new Set([targetId, ...getDescendantIds(targetId, state.nodes)]);
+
+      return {
+        nodes: state.nodes.filter((n) => !idsToDelete.has(n.id)),
+        edges: state.edges.filter(
+          (e) => !idsToDelete.has(e.sourceId) && !idsToDelete.has(e.targetId)
+        ),
+        selectedId:
+          state.selectedId === id || idsToDelete.has(state.selectedId ?? '')
+            ? null
+            : state.selectedId,
+        selectedType:
+          state.selectedId === id || idsToDelete.has(state.selectedId ?? '')
+            ? null
+            : state.selectedType,
+      };
+    }),
 
   // Selection with type tracking
   setSelected: (id, type) => set({ selectedId: id, selectedType: type }),
