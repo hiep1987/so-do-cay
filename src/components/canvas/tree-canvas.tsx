@@ -15,9 +15,10 @@ interface ViewState {
   scale: number;
 }
 
-// Interface for exposing SVG element to parent components (for export)
+// Interface for exposing SVG element to parent components (for export and view controls)
 export interface TreeCanvasRef {
   getSvgElement: () => SVGSVGElement | null;
+  resetView: () => void;
 }
 
 // Default probability tree matching reference TikZ format
@@ -51,14 +52,47 @@ export const TreeCanvas = forwardRef<TreeCanvasRef>(function TreeCanvas(_, ref) 
   // Touch state for two-finger panning
   const [touchStart, setTouchStart] = useState<{ x: number; y: number } | null>(null);
 
-  // Expose SVG element to parent for export functionality
-  useImperativeHandle(ref, () => ({
-    getSvgElement: () => svgRef.current,
-  }));
-
   // Store state
   const { nodes, edges, settings, selectedId, setSelected, setDiagram, addNode, isPreviewMode } = useTreeStore();
   const positions = useTreeLayout();
+
+  // Center tree in canvas at scale 1 (reusable for initial load and reset)
+  const centerTree = useCallback(() => {
+    if (positions.size === 0 || !svgRef.current) return;
+
+    const rect = svgRef.current.getBoundingClientRect();
+
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    positions.forEach(({ x, y }) => {
+      minX = Math.min(minX, x);
+      maxX = Math.max(maxX, x);
+      minY = Math.min(minY, y);
+      maxY = Math.max(maxY, y);
+    });
+
+    const padding = 60;
+    minX -= padding;
+    maxX += padding;
+    minY -= padding;
+    maxY += padding;
+
+    const treeCenterX = (minX + maxX) / 2;
+    const treeCenterY = (minY + maxY) / 2;
+    const canvasCenterX = rect.width / 2;
+    const canvasCenterY = rect.height / 2;
+
+    setView({
+      x: canvasCenterX - treeCenterX,
+      y: canvasCenterY - treeCenterY,
+      scale: 1,
+    });
+  }, [positions]);
+
+  // Expose SVG element and view controls to parent
+  useImperativeHandle(ref, () => ({
+    getSvgElement: () => svgRef.current,
+    resetView: centerTree,
+  }), [centerTree]);
 
   // Load sample data on mount
   useEffect(() => {
@@ -70,41 +104,9 @@ export const TreeCanvas = forwardRef<TreeCanvasRef>(function TreeCanvas(_, ref) 
   // Center tree in canvas on initial load
   useEffect(() => {
     if (hasInitializedView || positions.size === 0 || !svgRef.current) return;
-
-    const rect = svgRef.current.getBoundingClientRect();
-
-    // Calculate tree bounding box from positions
-    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-    positions.forEach(({ x, y }) => {
-      minX = Math.min(minX, x);
-      maxX = Math.max(maxX, x);
-      minY = Math.min(minY, y);
-      maxY = Math.max(maxY, y);
-    });
-
-    // Add padding for node size and labels
-    const padding = 60;
-    minX -= padding;
-    maxX += padding;
-    minY -= padding;
-    maxY += padding;
-
-    const treeWidth = maxX - minX;
-    const treeHeight = maxY - minY;
-    const treeCenterX = (minX + maxX) / 2;
-    const treeCenterY = (minY + maxY) / 2;
-
-    // Center the tree in the canvas
-    const canvasCenterX = rect.width / 2;
-    const canvasCenterY = rect.height / 2;
-
-    setView({
-      x: canvasCenterX - treeCenterX,
-      y: canvasCenterY - treeCenterY,
-      scale: 1,
-    });
+    centerTree();
     setHasInitializedView(true);
-  }, [positions, hasInitializedView]);
+  }, [positions, hasInitializedView, centerTree]);
 
   // Handle mouse wheel zoom
   const handleWheel = useCallback((e: WheelEvent<SVGSVGElement>) => {

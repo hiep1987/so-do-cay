@@ -1,10 +1,14 @@
 'use client';
 
-// Toolbar component with Add Root, Delete, Preview toggle - dark mode developer tool aesthetic
+// Toolbar component with Add Root, Delete, Preview toggle, Reset View - dark mode developer tool aesthetic
 
 import { useTreeStore } from '@/hooks/use-tree-store';
 
-export function Toolbar() {
+interface ToolbarProps {
+  onResetView?: () => void;
+}
+
+export function Toolbar({ onResetView }: ToolbarProps) {
   const {
     selectedId,
     selectedType,
@@ -75,6 +79,15 @@ export function Toolbar() {
           }`}
       >
         {isPreviewMode ? '● preview' : '○ preview'}
+      </button>
+
+      <button
+        onClick={onResetView}
+        className="px-3 py-1.5 text-sm font-medium font-mono rounded-md cursor-pointer
+          transition-colors duration-150
+          bg-surface-elevated text-text-secondary hover:text-text-primary"
+      >
+        reset view
       </button>
 
       {/* Spacer */}
