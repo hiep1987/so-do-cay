@@ -3,6 +3,15 @@
 
 import { TreeNode, TreeEdge, TreeSettings, TreeDiagram } from '@/types/tree';
 
+// Rotate label positions 90° clockwise for horizontal layout
+// vertical→horizontal: left→above, right→below, above→left, below→right
+const HORIZONTAL_POSITION_MAP: Record<string, string> = {
+  left: 'above',
+  right: 'below',
+  above: 'left',
+  below: 'right',
+};
+
 // Color mapping from app colors to TikZ color modifiers
 const COLOR_MAP: Record<string, string> = {
   orange: 'orange!80',
@@ -66,22 +75,27 @@ function generateStyles(settings: TreeSettings, maxDepth: number): string {
 
 // Format node label for TikZ with position
 // Users input LaTeX directly (e.g., \text{Gốc } O, \overline{A})
-function formatLabel(label: string, position: string, labelOffset?: number): string {
+function formatLabel(label: string, position: string, labelOffset?: number, isHorizontal?: boolean): string {
   if (!label) return '';
+
+  // Rotate position for horizontal layout
+  const pos = isHorizontal ? (HORIZONTAL_POSITION_MAP[position] || position) : position;
 
   const distPt = Math.round((labelOffset ?? 15) / 3);
   // above: yshift>0, below: yshift<0, left: xshift<0, right: xshift>0
-  const shiftAxis = (position === 'left' || position === 'right') ? 'xshift' : 'yshift';
-  const sign = (position === 'above' || position === 'right') ? '' : '-';
+  const shiftAxis = (pos === 'left' || pos === 'right') ? 'xshift' : 'yshift';
+  const sign = (pos === 'above' || pos === 'right') ? '' : '-';
   const shiftStyle = distPt !== 5 ? `[${shiftAxis}=${sign}${distPt}pt]` : '';
 
   const labelContent = (label.startsWith('$') && label.endsWith('$')) ? label : `$${label}$`;
-  return `, label={${shiftStyle}${position}:{${labelContent}}}`;
+  return `, label={${shiftStyle}${pos}:{${labelContent}}}`;
 }
 
 // Generate edge label markup (returns just the edge statement, caller handles indentation)
-function generateEdgeLabel(edge: TreeEdge): string {
+function generateEdgeLabel(edge: TreeEdge, isHorizontal?: boolean): string {
   if (!edge.label) return '';
+  // Rotate position for horizontal layout
+  const labelPos = isHorizontal ? (HORIZONTAL_POSITION_MAP[edge.labelPosition] || edge.labelPosition) : edge.labelPosition;
   const offsetPt = Math.round((edge.labelOffset ?? 15) / 3);
   const posMap: Record<string, string> = {
     left: `left=${offsetPt}pt`,
@@ -89,7 +103,7 @@ function generateEdgeLabel(edge: TreeEdge): string {
     above: `above=${offsetPt}pt`,
     below: `below=${offsetPt}pt`,
   };
-  const pos = posMap[edge.labelPosition] || `left=${offsetPt}pt`;
+  const pos = posMap[labelPos] || `left=${offsetPt}pt`;
   return `edge from parent node[${pos}] {$${edge.label}$}`;
 }
 
@@ -105,17 +119,20 @@ function generateNode(
   allNodes: TreeNode[],
   edgeMap: Map<string, TreeEdge>,
   depth: number,
-  isRoot: boolean = false
+  isRoot: boolean = false,
+  isHorizontal: boolean = false
 ): string {
   // Use 4 spaces per indent level
   const nodeIndent = '    '.repeat(depth);
   const childBlockIndent = '    '.repeat(depth + 1);
   const childContentIndent = '    '.repeat(depth + 2);
   const color = COLOR_MAP[node.color] || node.color;
-  const label = formatLabel(node.label, node.labelPosition, node.labelOffset);
+  const label = formatLabel(node.label, node.labelPosition, node.labelOffset, isHorizontal);
 
-  // TikZ renders children bottom-to-top, reverse to match visual top-to-bottom order
-  const children = allNodes.filter((n) => n.parentId === node.id).reverse();
+  // TikZ vertical: renders children left-to-right (same as visual order, no reverse needed)
+  // TikZ horizontal (grow=right): renders children bottom-to-top, reverse to match visual top-to-bottom
+  const childNodes = allNodes.filter((n) => n.parentId === node.id);
+  const children = isHorizontal ? childNodes.reverse() : childNodes;
 
   // Root node uses \node, children use node (no backslash) in TikZ tree syntax
   const nodeCmd = isRoot ? '\\node' : 'node';
@@ -126,8 +143,8 @@ function generateNode(
     for (const child of children) {
       const edge = edgeMap.get(child.id);
       // Child nodes are rendered at depth+2 (inside child { } block)
-      const childStr = generateNode(child, allNodes, edgeMap, depth + 2, false);
-      const edgeLabel = edge ? generateEdgeLabel(edge) : '';
+      const childStr = generateNode(child, allNodes, edgeMap, depth + 2, false, isHorizontal);
+      const edgeLabel = edge ? generateEdgeLabel(edge, isHorizontal) : '';
 
       // Format matching reference:
       //     child {
@@ -171,7 +188,8 @@ export function generateTikZ(diagram: TreeDiagram): string {
   const styles = generateStyles(settings, maxDepth);
 
   // Generate tree recursively (root at depth 0 = no indent, children indented)
-  const tree = generateNode(root, nodes, edgeMap, 0, true);
+  const isHorizontal = settings.direction === 'horizontal';
+  const tree = generateNode(root, nodes, edgeMap, 0, true, isHorizontal);
 
   return `\\begin{tikzpicture}[
 ${styles}

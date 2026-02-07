@@ -9,6 +9,14 @@ import { TreeNodeComponent } from './tree-node';
 import { TreeEdgeComponent } from './tree-edge';
 import { LatexLabel } from './latex-label';
 
+// Rotate label positions 90° clockwise for horizontal layout (matches TikZ generator)
+const HORIZONTAL_POSITION_MAP: Record<string, string> = {
+  left: 'above',
+  right: 'below',
+  above: 'left',
+  below: 'right',
+};
+
 interface ViewState {
   x: number;
   y: number;
@@ -306,17 +314,21 @@ export const TreeCanvas = forwardRef<TreeCanvasRef>(function TreeCanvas(_, ref) 
 
         const midX = (sourcePos.x + targetPos.x) / 2;
         const midY = (sourcePos.y + targetPos.y) / 2;
+        // Rotate edge label position for horizontal layout
+        const isHorizontal = settings.direction === 'horizontal';
+        const edgeLabelPos = isHorizontal
+          ? (HORIZONTAL_POSITION_MAP[edge.labelPosition] || edge.labelPosition)
+          : edge.labelPosition;
+
         // Offset labels based on their position, using per-edge offset distance
         const offset = edge.labelOffset ?? 15;
-        const labelOffsetX = edge.labelPosition === 'left' ? -offset
-                           : edge.labelPosition === 'right' ? offset : 0;
-        const labelOffsetY = edge.labelPosition === 'above' ? -offset
-                           : edge.labelPosition === 'below' ? offset : 0;
+        const labelOffsetX = edgeLabelPos === 'left' ? -offset
+                           : edgeLabelPos === 'right' ? offset : 0;
+        const labelOffsetY = edgeLabelPos === 'above' ? -offset
+                           : edgeLabelPos === 'below' ? offset : 0;
 
         // Map edge label position to LatexLabel anchor position
-        const labelAnchor = edge.labelPosition === 'left' ? 'left'
-                          : edge.labelPosition === 'right' ? 'right'
-                          : edge.labelPosition === 'above' ? 'above' : 'below';
+        const labelAnchor = edgeLabelPos;
 
         return (
           <LatexLabel
@@ -324,7 +336,7 @@ export const TreeCanvas = forwardRef<TreeCanvasRef>(function TreeCanvas(_, ref) 
             text={edge.label}
             x={midX + labelOffsetX}
             y={midY + labelOffsetY}
-            position={labelAnchor}
+            position={labelAnchor as 'above' | 'below' | 'left' | 'right'}
             viewX={view.x}
             viewY={view.y}
             scale={view.scale}
@@ -337,13 +349,19 @@ export const TreeCanvas = forwardRef<TreeCanvasRef>(function TreeCanvas(_, ref) 
         const pos = positions.get(node.id);
         if (!pos || !node.label) return null;
 
+        // Rotate node label position for horizontal layout
+        const isHorizontal = settings.direction === 'horizontal';
+        const nodeLabelPos = isHorizontal
+          ? (HORIZONTAL_POSITION_MAP[node.labelPosition] || node.labelPosition)
+          : node.labelPosition;
+
         return (
           <LatexLabel
             key={`label-${node.id}`}
             text={node.label}
             x={pos.x}
             y={pos.y}
-            position={node.labelPosition}
+            position={nodeLabelPos as 'above' | 'below' | 'left' | 'right'}
             labelOffset={node.labelOffset}
             viewX={view.x}
             viewY={view.y}
