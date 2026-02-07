@@ -41,50 +41,50 @@ function buildTree(nodes: TreeNode[]): TreeNodeWithChildren | null {
   return root;
 }
 
-// Count leaf nodes in subtree (for proper width calculation)
+// Count leaf nodes in a subtree
 function countLeaves(node: TreeNodeWithChildren): number {
   if (node.children.length === 0) return 1;
   return node.children.reduce((sum, child) => sum + countLeaves(child), 0);
 }
 
-// Calculate subtree width based on leaf count for symmetric distribution
+// Calculate subtree width based on leaf count
+// Uses uniform leaf spacing so all leaves are evenly distributed
 function calculateSubtreeWidth(
   node: TreeNodeWithChildren,
-  siblingDistance: number
+  leafSpacing: number
 ): number {
-  const leafCount = countLeaves(node);
-  // Width = (leafCount - 1) * siblingDistance to center properly
-  return (leafCount - 1) * siblingDistance;
+  const leaves = countLeaves(node);
+  // Width = space needed for all leaves (gaps between them)
+  return (leaves - 1) * leafSpacing;
 }
 
-// Recursive layout function with symmetric distribution
-// Supports both vertical (top-down) and horizontal (left-to-right) directions
+// Recursive layout function using leaf-count-based subtree widths
+// Ensures all leaves are evenly spaced like TikZ
 function layoutNode(
   node: TreeNodeWithChildren,
   x: number,
   y: number,
   settings: TreeSettings,
-  positions: NodePosition[]
+  positions: NodePosition[],
+  leafSpacing: number
 ): void {
   positions.push({ id: node.node.id, x, y });
 
   if (node.children.length === 0) return;
 
-  const { levelDistance, siblingDistance, direction } = settings;
+  const { levelDistance, direction } = settings;
   const isHorizontal = direction === 'horizontal';
 
-  // Calculate width for each child's subtree
+  // Calculate width for each child's subtree based on leaf count
   const childWidths = node.children.map((child) =>
-    calculateSubtreeWidth(child, siblingDistance)
+    calculateSubtreeWidth(child, leafSpacing)
   );
 
-  // Total width of all children subtrees + gaps between them
+  // Total width = sum of child subtree widths + gaps between children
   const totalChildrenWidth =
     childWidths.reduce((sum, w) => sum + w, 0) +
-    (node.children.length - 1) * siblingDistance;
+    (node.children.length - 1) * leafSpacing;
 
-  // In horizontal mode: children go right (X+), spread vertically (Y)
-  // In vertical mode: children go down (Y+), spread horizontally (X)
   const childPrimary = isHorizontal ? x + levelDistance : y + levelDistance;
   let currentSecondary = (isHorizontal ? y : x) - totalChildrenWidth / 2;
 
@@ -97,9 +97,9 @@ function layoutNode(
     const childX = isHorizontal ? childPrimary : childSecondary;
     const childY = isHorizontal ? childSecondary : childPrimary;
 
-    layoutNode(child, childX, childY, settings, positions);
+    layoutNode(child, childX, childY, settings, positions, leafSpacing);
 
-    currentSecondary += childSubtreeWidth + siblingDistance;
+    currentSecondary += childSubtreeWidth + leafSpacing;
   }
 }
 
@@ -116,7 +116,9 @@ export function computeTreeLayout(
   // Start root at center-top (vertical) or left-center (horizontal)
   const startX = settings.direction === 'horizontal' ? 50 : 400;
   const startY = settings.direction === 'horizontal' ? 300 : 50;
-  layoutNode(root, startX, startY, settings, positions);
+  // Use siblingDistance as the uniform spacing between leaves
+  const leafSpacing = settings.siblingDistance;
+  layoutNode(root, startX, startY, settings, positions, leafSpacing);
 
   return positions;
 }
