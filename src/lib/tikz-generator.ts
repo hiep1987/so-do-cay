@@ -70,15 +70,12 @@ function formatLabel(label: string, position: string, labelOffset?: number): str
   if (!label) return '';
 
   const distPt = Math.round((labelOffset ?? 15) / 3);
-  const distStyle = distPt !== 5 ? `, label distance=${distPt}pt` : '';
+  // Use yshift for above/below, xshift for left/right
+  const shiftAxis = (position === 'left' || position === 'right') ? 'xshift' : 'yshift';
+  const shiftStyle = distPt !== 5 ? `[${shiftAxis}=${distPt}pt]` : '';
 
-  // Already in math mode - use as-is
-  if (label.startsWith('$') && label.endsWith('$')) {
-    return `${distStyle}, label=${position}:{${label}}`;
-  }
-
-  // Contains LaTeX commands or plain text - wrap in math mode
-  return `${distStyle}, label=${position}:{$${label}$}`;
+  const labelContent = (label.startsWith('$') && label.endsWith('$')) ? label : `$${label}$`;
+  return `, label={${shiftStyle}${position}:{${labelContent}}}`;
 }
 
 // Generate edge label markup (returns just the edge statement, caller handles indentation)
