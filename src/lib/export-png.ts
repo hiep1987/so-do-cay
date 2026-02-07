@@ -1,7 +1,5 @@
-// PNG export utility using html2canvas
-// Replaces foreignObject with native SVG text for Safari compatibility
-
-import html2canvas from 'html2canvas';
+// PNG export utility using native SVG→Canvas rendering
+// Produces high-quality vector-crisp output without html2canvas dependency
 
 /**
  * Convert LaTeX commands to plain text for SVG export
@@ -110,43 +108,29 @@ function createSvgTextElement(
   return textEl;
 }
 
-export async function exportPng(
-  svgElement: SVGSVGElement,
-  filename = 'tree-diagram.png',
-  scale = 2
-) {
-  // Get content bounds from the main group
+/**
+ * Prepare a clean SVG clone for export:
+ * - Reset transform, set viewBox to content bounds
+ * - Replace foreignObject with native SVG text
+ * - Remove grid, background, zoom indicator
+ * Returns { clone, width, height }
+ */
+function prepareExportSvg(svgElement: SVGSVGElement) {
   const group = svgElement.querySelector('g');
   const bbox = group?.getBBox() || new DOMRect(0, 0, 800, 600);
   const padding = 20;
-  const bottomPadding = 40; // Extra padding for bottom labels (below leaf nodes)
+  const bottomPadding = 40;
 
   const width = bbox.width + padding * 2;
   const height = bbox.height + padding + bottomPadding;
 
-  // Create a container for export
-  const container = document.createElement('div');
-  container.style.cssText = `
-    position: fixed;
-    left: 0;
-    top: 0;
-    width: ${width}px;
-    height: ${height}px;
-    background-color: white;
-    z-index: 9999;
-    overflow: hidden;
-  `;
-  container.id = 'export-container';
-
-  // Clone the SVG
   const clone = svgElement.cloneNode(true) as SVGSVGElement;
 
-  // Set viewBox to fit content with padding
+  // Set viewBox and dimensions
   clone.setAttribute('viewBox', `${bbox.x - padding} ${bbox.y - padding} ${width} ${height}`);
   clone.setAttribute('width', String(width));
   clone.setAttribute('height', String(height));
-  clone.style.display = 'block';
-  clone.style.backgroundColor = 'white';
+  clone.removeAttribute('style');
 
   // Reset transform on main group
   const cloneGroup = clone.querySelector('g');
@@ -155,7 +139,6 @@ export async function exportPng(
   }
 
   // Replace foreignObjects with native SVG text elements
-  // This avoids Safari's buggy foreignObject rendering
   const foreignObjects = Array.from(clone.querySelectorAll('foreignObject'));
   foreignObjects.forEach((fo) => {
     const originalText = fo.getAttribute('data-original-text') || '';
@@ -174,13 +157,11 @@ export async function exportPng(
         hasOverline
       );
 
-      // Insert text element into main group
       if (cloneGroup) {
         cloneGroup.appendChild(textElement);
       }
     }
 
-    // Remove the foreignObject
     fo.remove();
   });
 
@@ -190,9 +171,7 @@ export async function exportPng(
     gridPattern.remove();
   }
   const backgroundRects = clone.querySelectorAll('rect[fill^="url(#"]');
-  backgroundRects.forEach((rect) => {
-    rect.remove();
-  });
+  backgroundRects.forEach((rect) => rect.remove());
 
   // Remove zoom indicator text
   const texts = clone.querySelectorAll('text');
@@ -202,32 +181,79 @@ export async function exportPng(
     }
   });
 
-  container.appendChild(clone);
-  document.body.appendChild(container);
+  return { clone, width, height };
+}
 
-  try {
-    const canvas = await html2canvas(container, {
-      scale: scale,
-      backgroundColor: 'white',
-      logging: false,
-      useCORS: true,
-      allowTaint: true,
-    });
+/**
+ * Export SVG to high-quality PNG using native SVG→Canvas rendering.
+ * Serializes cleaned SVG, loads as Image, draws onto scaled canvas.
+ * Default scale=3 for crisp 3x resolution.
+ */
+export async function exportPng(
+  svgElement: SVGSVGElement,
+  filename = 'tree-diagram.png',
+  scale = 3
+) {
+  const { clone, width, height } = prepareExportSvg(svgElement);
 
-    // Convert to PNG and download
-    canvas.toBlob((blob) => {
-      if (blob) {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+  // Add white background rect to the SVG itself
+  const bgRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+  bgRect.setAttribute('x', clone.viewBox.baseVal.x.toString());
+  bgRect.setAttribute('y', clone.viewBox.baseVal.y.toString());
+  bgRect.setAttribute('width', '100%');
+  bgRect.setAttribute('height', '100%');
+  bgRect.setAttribute('fill', 'white');
+  clone.insertBefore(bgRect, clone.firstChild);
+
+  // Serialize SVG to string
+  const serializer = new XMLSerializer();
+  const svgString = serializer.serializeToString(clone);
+  const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+  const svgUrl = URL.createObjectURL(svgBlob);
+
+  // Load SVG as image and draw onto canvas
+  const img = new Image();
+  img.width = width;
+  img.height = height;
+
+  await new Promise<void>((resolve, reject) => {
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = width * scale;
+      canvas.height = height * scale;
+
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        reject(new Error('Failed to get canvas context'));
+        return;
       }
-    }, 'image/png');
-  } finally {
-    document.body.removeChild(container);
-  }
+
+      // Fill white background
+      ctx.fillStyle = 'white';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Draw SVG at scaled resolution
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+      // Convert to PNG and download
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        }
+        resolve();
+      }, 'image/png');
+    };
+
+    img.onerror = () => reject(new Error('Failed to load SVG as image'));
+    img.src = svgUrl;
+  });
+
+  URL.revokeObjectURL(svgUrl);
 }
