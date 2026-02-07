@@ -25,13 +25,13 @@ export interface TreeCanvasRef {
 // Structure: Root O → A/Ā → B/B̄
 // Labels use LaTeX format directly for TikZ export
 const SAMPLE_NODES = [
-  { id: 'root', parentId: null, label: '\\text{Gốc } O', labelPosition: 'above' as const, color: 'orange' },
-  { id: 'a', parentId: 'root', label: 'A', labelPosition: 'left' as const, color: 'cyan' },
-  { id: 'a-bar', parentId: 'root', label: '\\overline{A}', labelPosition: 'right' as const, color: 'green' },
-  { id: 'b1', parentId: 'a', label: 'B', labelPosition: 'below' as const, color: 'pink' },
-  { id: 'b1-bar', parentId: 'a', label: '\\overline{B}', labelPosition: 'below' as const, color: 'violet' },
-  { id: 'b2', parentId: 'a-bar', label: 'B', labelPosition: 'below' as const, color: 'pink' },
-  { id: 'b2-bar', parentId: 'a-bar', label: '\\overline{B}', labelPosition: 'below' as const, color: 'violet' },
+  { id: 'root', parentId: null, label: '\\text{Gốc } O', labelPosition: 'above' as const, labelOffset: 15, color: 'orange' },
+  { id: 'a', parentId: 'root', label: 'A', labelPosition: 'left' as const, labelOffset: 15, color: 'cyan' },
+  { id: 'a-bar', parentId: 'root', label: '\\overline{A}', labelPosition: 'right' as const, labelOffset: 15, color: 'green' },
+  { id: 'b1', parentId: 'a', label: 'B', labelPosition: 'below' as const, labelOffset: 15, color: 'pink' },
+  { id: 'b1-bar', parentId: 'a', label: '\\overline{B}', labelPosition: 'below' as const, labelOffset: 15, color: 'violet' },
+  { id: 'b2', parentId: 'a-bar', label: 'B', labelPosition: 'below' as const, labelOffset: 15, color: 'pink' },
+  { id: 'b2-bar', parentId: 'a-bar', label: '\\overline{B}', labelPosition: 'below' as const, labelOffset: 15, color: 'violet' },
 ];
 
 const SAMPLE_EDGES = [
@@ -344,6 +344,7 @@ export const TreeCanvas = forwardRef<TreeCanvasRef>(function TreeCanvas(_, ref) 
             x={pos.x}
             y={pos.y}
             position={node.labelPosition}
+            labelOffset={node.labelOffset}
             viewX={view.x}
             viewY={view.y}
             scale={view.scale}

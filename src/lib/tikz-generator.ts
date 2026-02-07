@@ -66,21 +66,19 @@ function generateStyles(settings: TreeSettings, maxDepth: number): string {
 
 // Format node label for TikZ with position
 // Users input LaTeX directly (e.g., \text{Gốc } O, \overline{A})
-function formatLabel(label: string, position: string): string {
+function formatLabel(label: string, position: string, labelOffset?: number): string {
   if (!label) return '';
+
+  const distPt = Math.round((labelOffset ?? 15) / 3);
+  const distStyle = distPt !== 5 ? `, label distance=${distPt}pt` : '';
 
   // Already in math mode - use as-is
   if (label.startsWith('$') && label.endsWith('$')) {
-    return `, label=${position}:{${label}}`;
+    return `${distStyle}, label=${position}:{${label}}`;
   }
 
-  // Contains LaTeX commands - wrap in math mode
-  if (label.includes('\\')) {
-    return `, label=${position}:{$${label}$}`;
-  }
-
-  // Plain text - wrap in math mode
-  return `, label=${position}:{$${label}$}`;
+  // Contains LaTeX commands or plain text - wrap in math mode
+  return `${distStyle}, label=${position}:{$${label}$}`;
 }
 
 // Generate edge label markup (returns just the edge statement, caller handles indentation)
@@ -116,7 +114,7 @@ function generateNode(
   const childBlockIndent = '    '.repeat(depth + 1);
   const childContentIndent = '    '.repeat(depth + 2);
   const color = COLOR_MAP[node.color] || node.color;
-  const label = formatLabel(node.label, node.labelPosition);
+  const label = formatLabel(node.label, node.labelPosition, node.labelOffset);
 
   // Find children sorted by their original order
   const children = allNodes.filter((n) => n.parentId === node.id);

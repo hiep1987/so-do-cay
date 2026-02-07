@@ -11,22 +11,25 @@ interface LatexLabelProps {
   x: number;
   y: number;
   position?: 'above' | 'below' | 'left' | 'right';
+  labelOffset?: number;
   // Transform props for Safari foreignObject fix
   viewX?: number;
   viewY?: number;
   scale?: number;
 }
 
-// Offsets for label positioning relative to anchor point
-const POSITION_OFFSETS: Record<string, { dx: number; dy: number; anchor: string }> = {
-  above: { dx: 0, dy: -15, anchor: 'middle' },
-  below: { dx: 0, dy: 20, anchor: 'middle' },
-  left: { dx: -10, dy: 0, anchor: 'end' },
-  right: { dx: 10, dy: 0, anchor: 'start' },
+// Direction vectors for label positioning relative to anchor point
+const POSITION_DIRS: Record<string, { dx: number; dy: number; anchor: string }> = {
+  above: { dx: 0, dy: -1, anchor: 'middle' },
+  below: { dx: 0, dy: 1, anchor: 'middle' },
+  left: { dx: -1, dy: 0, anchor: 'end' },
+  right: { dx: 1, dy: 0, anchor: 'start' },
 };
 
-export function LatexLabel({ text, x, y, position = 'above', viewX = 0, viewY = 0, scale = 1 }: LatexLabelProps) {
-  const offset = POSITION_OFFSETS[position];
+export function LatexLabel({ text, x, y, position = 'above', labelOffset, viewX = 0, viewY = 0, scale = 1 }: LatexLabelProps) {
+  const dir = POSITION_DIRS[position];
+  const dist = labelOffset ?? 15;
+  const offset = { dx: dir.dx * dist, dy: dir.dy * dist, anchor: dir.anchor };
 
   // Render LaTeX, fallback to plain text if parsing fails
   const html = useMemo(() => {

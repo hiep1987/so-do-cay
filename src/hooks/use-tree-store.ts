@@ -68,6 +68,7 @@ export const useTreeStore = create<TreeStore>((set, get) => ({
         parentId,
         label: parentId ? 'New' : '',
         labelPosition: 'below',
+        labelOffset: 15,
         color: 'orange',
       };
 
