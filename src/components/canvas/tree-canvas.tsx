@@ -35,12 +35,12 @@ const SAMPLE_NODES = [
 ];
 
 const SAMPLE_EDGES = [
-  { id: 'e1', sourceId: 'root', targetId: 'a', label: '0,4', labelPosition: 'left' as const },
-  { id: 'e2', sourceId: 'root', targetId: 'a-bar', label: '0,6', labelPosition: 'right' as const },
-  { id: 'e3', sourceId: 'a', targetId: 'b1', label: '0,3', labelPosition: 'left' as const },
-  { id: 'e4', sourceId: 'a', targetId: 'b1-bar', label: '0,7', labelPosition: 'right' as const },
-  { id: 'e5', sourceId: 'a-bar', targetId: 'b2', label: '0,4', labelPosition: 'left' as const },
-  { id: 'e6', sourceId: 'a-bar', targetId: 'b2-bar', label: '0,6', labelPosition: 'right' as const },
+  { id: 'e1', sourceId: 'root', targetId: 'a', label: '0,4', labelPosition: 'left' as const, labelOffset: 15 },
+  { id: 'e2', sourceId: 'root', targetId: 'a-bar', label: '0,6', labelPosition: 'right' as const, labelOffset: 15 },
+  { id: 'e3', sourceId: 'a', targetId: 'b1', label: '0,3', labelPosition: 'left' as const, labelOffset: 15 },
+  { id: 'e4', sourceId: 'a', targetId: 'b1-bar', label: '0,7', labelPosition: 'right' as const, labelOffset: 15 },
+  { id: 'e5', sourceId: 'a-bar', targetId: 'b2', label: '0,4', labelPosition: 'left' as const, labelOffset: 15 },
+  { id: 'e6', sourceId: 'a-bar', targetId: 'b2-bar', label: '0,6', labelPosition: 'right' as const, labelOffset: 15 },
 ];
 
 export const TreeCanvas = forwardRef<TreeCanvasRef>(function TreeCanvas(_, ref) {
@@ -306,11 +306,12 @@ export const TreeCanvas = forwardRef<TreeCanvasRef>(function TreeCanvas(_, ref) 
 
         const midX = (sourcePos.x + targetPos.x) / 2;
         const midY = (sourcePos.y + targetPos.y) / 2;
-        // Offset labels based on their position
-        const labelOffsetX = edge.labelPosition === 'left' ? -15
-                           : edge.labelPosition === 'right' ? 15 : 0;
-        const labelOffsetY = edge.labelPosition === 'above' ? -15
-                           : edge.labelPosition === 'below' ? 15 : 0;
+        // Offset labels based on their position, using per-edge offset distance
+        const offset = edge.labelOffset ?? 15;
+        const labelOffsetX = edge.labelPosition === 'left' ? -offset
+                           : edge.labelPosition === 'right' ? offset : 0;
+        const labelOffsetY = edge.labelPosition === 'above' ? -offset
+                           : edge.labelPosition === 'below' ? offset : 0;
 
         // Map edge label position to LatexLabel anchor position
         const labelAnchor = edge.labelPosition === 'left' ? 'left'

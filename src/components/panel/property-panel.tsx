@@ -173,6 +173,23 @@ export function PropertyPanel() {
             ))}
           </select>
         </div>
+
+        {/* Label offset (distance from edge) */}
+        <div className="mb-4">
+          <label className="block text-xs font-mono text-text-muted mb-1.5">
+            labelOffset <span className="text-text-muted">({selectedEdge.labelOffset ?? 15}px)</span>
+          </label>
+          <input
+            type="range"
+            min="0"
+            max="60"
+            value={selectedEdge.labelOffset ?? 15}
+            onChange={(e) =>
+              updateEdge(selectedEdge.id, { labelOffset: Number(e.target.value) })
+            }
+            className="w-full accent-primary"
+          />
+        </div>
       </div>
     );
   }

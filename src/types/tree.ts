@@ -14,6 +14,7 @@ export interface TreeEdge {
   targetId: string;
   label: string;
   labelPosition: 'above' | 'below' | 'left' | 'right';
+  labelOffset: number;
 }
 
 export type TreeDirection = 'vertical' | 'horizontal';
