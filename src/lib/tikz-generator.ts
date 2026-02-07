@@ -70,9 +70,10 @@ function formatLabel(label: string, position: string, labelOffset?: number): str
   if (!label) return '';
 
   const distPt = Math.round((labelOffset ?? 15) / 3);
-  // Use yshift for above/below, xshift for left/right
+  // above: yshift>0, below: yshift<0, left: xshift<0, right: xshift>0
   const shiftAxis = (position === 'left' || position === 'right') ? 'xshift' : 'yshift';
-  const shiftStyle = distPt !== 5 ? `[${shiftAxis}=${distPt}pt]` : '';
+  const sign = (position === 'above' || position === 'right') ? '' : '-';
+  const shiftStyle = distPt !== 5 ? `[${shiftAxis}=${sign}${distPt}pt]` : '';
 
   const labelContent = (label.startsWith('$') && label.endsWith('$')) ? label : `$${label}$`;
   return `, label={${shiftStyle}${position}:{${labelContent}}}`;
