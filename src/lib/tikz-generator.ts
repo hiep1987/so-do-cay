@@ -114,8 +114,8 @@ function generateNode(
   const color = COLOR_MAP[node.color] || node.color;
   const label = formatLabel(node.label, node.labelPosition, node.labelOffset);
 
-  // Find children sorted by their original order
-  const children = allNodes.filter((n) => n.parentId === node.id);
+  // TikZ renders children bottom-to-top, reverse to match visual top-to-bottom order
+  const children = allNodes.filter((n) => n.parentId === node.id).reverse();
 
   // Root node uses \node, children use node (no backslash) in TikZ tree syntax
   const nodeCmd = isRoot ? '\\node' : 'node';
