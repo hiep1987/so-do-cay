@@ -47,6 +47,11 @@ function generateStyles(settings: TreeSettings, maxDepth: number): string {
     `    dot/.style={circle, fill=#1, inner sep=0pt, minimum size=${settings.nodeSize}pt}`,
   ];
 
+  // Add grow direction for horizontal mode
+  if (settings.direction === 'horizontal') {
+    lines.push(`    grow=right`);
+  }
+
   // Add level styles with halving sibling distance per level
   for (let i = 1; i <= maxDepth; i++) {
     const siblingDist = settings.siblingDistance / Math.pow(2, i - 1);

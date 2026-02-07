@@ -14,10 +14,12 @@ export function Toolbar({ onResetView }: ToolbarProps) {
     selectedType,
     isPreviewMode,
     hasRoot,
+    settings,
     addNode,
     deleteNode,
     deleteEdge,
     setPreviewMode,
+    updateSettings,
   } = useTreeStore();
 
   const rootExists = hasRoot();
@@ -33,6 +35,12 @@ export function Toolbar({ onResetView }: ToolbarProps) {
     } else if (selectedType === 'edge') {
       deleteEdge(selectedId);
     }
+  };
+
+  const handleToggleDirection = () => {
+    updateSettings({
+      direction: settings.direction === 'vertical' ? 'horizontal' : 'vertical',
+    });
   };
 
   return (
@@ -88,6 +96,15 @@ export function Toolbar({ onResetView }: ToolbarProps) {
           bg-surface-elevated text-text-secondary hover:text-text-primary"
       >
         reset view
+      </button>
+
+      <button
+        onClick={handleToggleDirection}
+        className="px-3 py-1.5 text-sm font-medium font-mono rounded-md cursor-pointer
+          transition-colors duration-150
+          bg-surface-elevated text-text-secondary hover:text-text-primary"
+      >
+        {settings.direction === 'vertical' ? '↓ vertical' : '→ horizontal'}
       </button>
 
       {/* Spacer */}

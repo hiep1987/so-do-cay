@@ -16,10 +16,13 @@ export interface TreeEdge {
   labelPosition: 'left' | 'right';
 }
 
+export type TreeDirection = 'vertical' | 'horizontal';
+
 export interface TreeSettings {
   levelDistance: number;
   siblingDistance: number;
   nodeSize: number;
+  direction: TreeDirection;
 }
 
 export interface TreeDiagram {
@@ -32,4 +35,5 @@ export const DEFAULT_SETTINGS: TreeSettings = {
   levelDistance: 120, // 3cm (120/40)
   siblingDistance: 200, // 5cm at level 1, halves to 2.5cm at level 2
   nodeSize: 6,
+  direction: 'vertical',
 };

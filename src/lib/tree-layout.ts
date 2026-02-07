@@ -58,6 +58,7 @@ function calculateSubtreeWidth(
 }
 
 // Recursive layout function with symmetric distribution
+// Supports both vertical (top-down) and horizontal (left-to-right) directions
 function layoutNode(
   node: TreeNodeWithChildren,
   x: number,
@@ -69,8 +70,8 @@ function layoutNode(
 
   if (node.children.length === 0) return;
 
-  const { levelDistance, siblingDistance } = settings;
-  const childY = y + levelDistance;
+  const { levelDistance, siblingDistance, direction } = settings;
+  const isHorizontal = direction === 'horizontal';
 
   // Calculate width for each child's subtree
   const childWidths = node.children.map((child) =>
@@ -82,20 +83,23 @@ function layoutNode(
     childWidths.reduce((sum, w) => sum + w, 0) +
     (node.children.length - 1) * siblingDistance;
 
-  // Start from left edge, centered under parent
-  let currentX = x - totalChildrenWidth / 2;
+  // In horizontal mode: children go right (X+), spread vertically (Y)
+  // In vertical mode: children go down (Y+), spread horizontally (X)
+  const childPrimary = isHorizontal ? x + levelDistance : y + levelDistance;
+  let currentSecondary = (isHorizontal ? y : x) - totalChildrenWidth / 2;
 
   for (let i = 0; i < node.children.length; i++) {
     const child = node.children[i];
     const childSubtreeWidth = childWidths[i];
 
-    // Position child at center of its subtree allocation
-    const childX = currentX + childSubtreeWidth / 2;
+    const childSecondary = currentSecondary + childSubtreeWidth / 2;
+
+    const childX = isHorizontal ? childPrimary : childSecondary;
+    const childY = isHorizontal ? childSecondary : childPrimary;
 
     layoutNode(child, childX, childY, settings, positions);
 
-    // Move to next position: current subtree width + gap
-    currentX += childSubtreeWidth + siblingDistance;
+    currentSecondary += childSubtreeWidth + siblingDistance;
   }
 }
 
@@ -109,8 +113,10 @@ export function computeTreeLayout(
 
   if (!root) return positions;
 
-  // Start root at center top
-  layoutNode(root, 400, 50, settings, positions);
+  // Start root at center-top (vertical) or left-center (horizontal)
+  const startX = settings.direction === 'horizontal' ? 50 : 400;
+  const startY = settings.direction === 'horizontal' ? 300 : 50;
+  layoutNode(root, startX, startY, settings, positions);
 
   return positions;
 }
