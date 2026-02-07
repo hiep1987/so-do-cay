@@ -13,7 +13,7 @@ export interface TreeEdge {
   sourceId: string;
   targetId: string;
   label: string;
-  labelPosition: 'left' | 'right';
+  labelPosition: 'above' | 'below' | 'left' | 'right';
 }
 
 export type TreeDirection = 'vertical' | 'horizontal';

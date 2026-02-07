@@ -86,7 +86,13 @@ function formatLabel(label: string, position: string): string {
 // Generate edge label markup (returns just the edge statement, caller handles indentation)
 function generateEdgeLabel(edge: TreeEdge): string {
   if (!edge.label) return '';
-  const pos = edge.labelPosition === 'left' ? 'left=5pt' : 'right=5pt';
+  const posMap: Record<string, string> = {
+    left: 'left=5pt',
+    right: 'right=5pt',
+    above: 'above=3pt',
+    below: 'below=3pt',
+  };
+  const pos = posMap[edge.labelPosition] || 'left=5pt';
   return `edge from parent node[${pos}] {$${edge.label}$}`;
 }
 

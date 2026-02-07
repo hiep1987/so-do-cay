@@ -306,11 +306,16 @@ export const TreeCanvas = forwardRef<TreeCanvasRef>(function TreeCanvas(_, ref) 
 
         const midX = (sourcePos.x + targetPos.x) / 2;
         const midY = (sourcePos.y + targetPos.y) / 2;
-        // In vertical mode, offset labels horizontally (left/right of edge)
-        // In horizontal mode, offset labels vertically (above/below edge)
-        const isHorizontal = settings.direction === 'horizontal';
-        const labelOffsetX = isHorizontal ? 0 : (edge.labelPosition === 'left' ? -15 : 15);
-        const labelOffsetY = isHorizontal ? (edge.labelPosition === 'left' ? -15 : 15) : 0;
+        // Offset labels based on their position
+        const labelOffsetX = edge.labelPosition === 'left' ? -15
+                           : edge.labelPosition === 'right' ? 15 : 0;
+        const labelOffsetY = edge.labelPosition === 'above' ? -15
+                           : edge.labelPosition === 'below' ? 15 : 0;
+
+        // Map edge label position to LatexLabel anchor position
+        const labelAnchor = edge.labelPosition === 'left' ? 'left'
+                          : edge.labelPosition === 'right' ? 'right'
+                          : edge.labelPosition === 'above' ? 'above' : 'below';
 
         return (
           <LatexLabel
@@ -318,7 +323,7 @@ export const TreeCanvas = forwardRef<TreeCanvasRef>(function TreeCanvas(_, ref) 
             text={edge.label}
             x={midX + labelOffsetX}
             y={midY + labelOffsetY}
-            position={edge.labelPosition === 'left' ? 'left' : 'right'}
+            position={labelAnchor}
             viewX={view.x}
             viewY={view.y}
             scale={view.scale}

@@ -6,7 +6,7 @@ import { useTreeStore } from '@/hooks/use-tree-store';
 import { PRESET_COLORS } from '@/constants/colors';
 
 const NODE_LABEL_POSITIONS = ['above', 'below', 'left', 'right'] as const;
-const EDGE_LABEL_POSITIONS = ['left', 'right'] as const;
+const EDGE_LABEL_POSITIONS = ['left', 'right', 'above', 'below'] as const;
 
 export function PropertyPanel() {
   const {
