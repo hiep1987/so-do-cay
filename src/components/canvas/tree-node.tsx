@@ -39,6 +39,23 @@ export function TreeNodeComponent({
     onDoubleClick?.();
   };
 
+  // When labelPosition is 'center', hide the circle (label replaces the node)
+  if (node.labelPosition === 'center') {
+    return (
+      <g onClick={handleClick} onDoubleClick={handleDoubleClick} style={{ cursor: 'pointer' }}>
+        {/* Invisible hit area for click/selection */}
+        <circle
+          cx={x}
+          cy={y}
+          r={size * 0.75}
+          fill="transparent"
+          stroke={isSelected ? '#3b82f6' : 'none'}
+          strokeWidth={isSelected ? 3 : 0}
+        />
+      </g>
+    );
+  }
+
   return (
     <g onClick={handleClick} onDoubleClick={handleDoubleClick} style={{ cursor: 'pointer' }}>
       {/* Node circle with selection highlight */}

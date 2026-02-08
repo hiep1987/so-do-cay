@@ -349,11 +349,13 @@ export const TreeCanvas = forwardRef<TreeCanvasRef>(function TreeCanvas(_, ref) 
         const pos = positions.get(node.id);
         if (!pos || !node.label) return null;
 
-        // Rotate node label position for horizontal layout
+        // Rotate node label position for horizontal layout (center stays center)
         const isHorizontal = settings.direction === 'horizontal';
-        const nodeLabelPos = isHorizontal
-          ? (HORIZONTAL_POSITION_MAP[node.labelPosition] || node.labelPosition)
-          : node.labelPosition;
+        const nodeLabelPos = node.labelPosition === 'center'
+          ? 'center'
+          : isHorizontal
+            ? (HORIZONTAL_POSITION_MAP[node.labelPosition] || node.labelPosition)
+            : node.labelPosition;
 
         return (
           <LatexLabel
@@ -361,7 +363,7 @@ export const TreeCanvas = forwardRef<TreeCanvasRef>(function TreeCanvas(_, ref) 
             text={node.label}
             x={pos.x}
             y={pos.y}
-            position={nodeLabelPos as 'above' | 'below' | 'left' | 'right'}
+            position={nodeLabelPos as 'above' | 'below' | 'left' | 'right' | 'center'}
             labelOffset={node.labelOffset}
             viewX={view.x}
             viewY={view.y}

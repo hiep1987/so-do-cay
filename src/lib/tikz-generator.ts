@@ -127,7 +127,14 @@ function generateNode(
   const childBlockIndent = '    '.repeat(depth + 1);
   const childContentIndent = '    '.repeat(depth + 2);
   const color = COLOR_MAP[node.color] || node.color;
-  const label = formatLabel(node.label, node.labelPosition, node.labelOffset, isHorizontal);
+
+  // When labelPosition is 'center', node becomes a text label (no dot circle)
+  const isCenterLabel = node.labelPosition === 'center';
+
+  let label = '';
+  if (!isCenterLabel) {
+    label = formatLabel(node.label, node.labelPosition, node.labelOffset, isHorizontal);
+  }
 
   // TikZ vertical: renders children left-to-right (same as visual order, no reverse needed)
   // TikZ horizontal (grow=right): renders children bottom-to-top, reverse to match visual top-to-bottom
@@ -136,7 +143,15 @@ function generateNode(
 
   // Root node uses \node, children use node (no backslash) in TikZ tree syntax
   const nodeCmd = isRoot ? '\\node' : 'node';
-  let result = `${nodeIndent}${nodeCmd}[dot=${color}${label}] {}`;
+
+  let result: string;
+  if (isCenterLabel && node.label) {
+    // Center label: node rendered as white-filled rectangle with label text
+    const labelContent = (node.label.startsWith('$') && node.label.endsWith('$')) ? node.label : `$${node.label}$`;
+    result = `${nodeIndent}${nodeCmd}[fill=white,rectangle,inner sep=1pt] {${labelContent}}`;
+  } else {
+    result = `${nodeIndent}${nodeCmd}[dot=${color}${label}] {}`;
+  }
 
   if (children.length > 0) {
     result += '\n';

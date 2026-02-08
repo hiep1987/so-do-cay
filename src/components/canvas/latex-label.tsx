@@ -10,7 +10,7 @@ interface LatexLabelProps {
   text: string;
   x: number;
   y: number;
-  position?: 'above' | 'below' | 'left' | 'right';
+  position?: 'above' | 'below' | 'left' | 'right' | 'center';
   labelOffset?: number;
   // Transform props for Safari foreignObject fix
   viewX?: number;
@@ -24,11 +24,13 @@ const POSITION_DIRS: Record<string, { dx: number; dy: number; anchor: string }> 
   below: { dx: 0, dy: 1, anchor: 'middle' },
   left: { dx: -1, dy: 0, anchor: 'end' },
   right: { dx: 1, dy: 0, anchor: 'start' },
+  center: { dx: 0, dy: 0, anchor: 'middle' },
 };
 
 export function LatexLabel({ text, x, y, position = 'above', labelOffset, viewX = 0, viewY = 0, scale = 1 }: LatexLabelProps) {
   const dir = POSITION_DIRS[position];
-  const dist = labelOffset ?? 15;
+  // For center position, no offset distance is applied
+  const dist = position === 'center' ? 0 : (labelOffset ?? 15);
   const offset = { dx: dir.dx * dist, dy: dir.dy * dist, anchor: dir.anchor };
 
   // Render LaTeX, fallback to plain text if parsing fails
@@ -55,8 +57,8 @@ export function LatexLabel({ text, x, y, position = 'above', labelOffset, viewX 
   const foX = offset.anchor === 'end' ? transformedX + offset.dx * scale - 80
             : offset.anchor === 'start' ? transformedX + offset.dx * scale
             : transformedX + offset.dx * scale - 40;
-  // For left/right positions, center label vertically relative to node
-  const foY = (position === 'left' || position === 'right')
+  // For left/right/center positions, center label vertically relative to node
+  const foY = (position === 'left' || position === 'right' || position === 'center')
             ? transformedY - 15 * scale
             : transformedY + offset.dy * scale - 10;
 
@@ -68,7 +70,7 @@ export function LatexLabel({ text, x, y, position = 'above', labelOffset, viewX 
   const contentFoX = offset.anchor === 'end' ? x + offset.dx - 80
                    : offset.anchor === 'start' ? x + offset.dx
                    : x + offset.dx - 40;
-  const contentFoY = (position === 'left' || position === 'right')
+  const contentFoY = (position === 'left' || position === 'right' || position === 'center')
                    ? y - 15
                    : y + offset.dy - 10;
 
@@ -83,6 +85,7 @@ export function LatexLabel({ text, x, y, position = 'above', labelOffset, viewX 
       data-text-align={offset.anchor === 'end' ? 'right' : offset.anchor === 'start' ? 'left' : 'center'}
       data-content-x={contentFoX}
       data-content-y={contentFoY}
+      data-label-position={position}
     >
       {/* Wrapper div with explicit position to fix Safari foreignObject transform bug */}
       <div
@@ -102,10 +105,17 @@ export function LatexLabel({ text, x, y, position = 'above', labelOffset, viewX 
             whiteSpace: 'nowrap',
             height: '100%',
             display: 'flex',
-            alignItems: (position === 'left' || position === 'right') ? 'center' : 'flex-start',
+            alignItems: (position === 'left' || position === 'right' || position === 'center') ? 'center' : 'flex-start',
             justifyContent: offset.anchor === 'end' ? 'flex-end'
                           : offset.anchor === 'start' ? 'flex-start'
                           : 'center',
+            ...(position === 'center' ? {
+              backgroundColor: 'white',
+              color: '#000000',
+              padding: '1px 3px',
+              width: 'fit-content',
+              margin: '0 auto',
+            } : {}),
           }}
           dangerouslySetInnerHTML={{ __html: html }}
         />

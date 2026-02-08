@@ -4,7 +4,7 @@ export interface TreeNode {
   id: string;
   parentId: string | null;
   label: string;
-  labelPosition: 'above' | 'below' | 'left' | 'right';
+  labelPosition: 'above' | 'below' | 'left' | 'right' | 'center';
   labelOffset: number;
   color: string;
 }

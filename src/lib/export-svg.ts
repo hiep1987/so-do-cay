@@ -155,6 +155,7 @@ export function exportSvg(svgElement: SVGSVGElement, filename = 'tree-diagram.sv
       // Use pre-calculated content coordinates (stored in latex-label.tsx)
       const contentX = parseFloat(fo.getAttribute('data-content-x') || '0');
       const contentY = parseFloat(fo.getAttribute('data-content-y') || '0');
+      const labelPosition = fo.getAttribute('data-label-position') || '';
       const foWidth = 80;
       const foHeight = 30;
 
@@ -174,6 +175,21 @@ export function exportSvg(svgElement: SVGSVGElement, filename = 'tree-diagram.sv
 
       // Create native SVG text element
       const textEl = createSvgTextElement(doc, text, textX, textY, textAlign, hasOverline);
+
+      // For center labels, add white background rect behind text (matches TikZ fill=white)
+      if (labelPosition === 'center') {
+        const textWidth = text.length * 8 + 6; // approx char width + padding
+        const textHeight = 18;
+        const bgRect = doc.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        bgRect.setAttribute('x', String(textX - textWidth / 2));
+        bgRect.setAttribute('y', String(textY - textHeight / 2));
+        bgRect.setAttribute('width', String(textWidth));
+        bgRect.setAttribute('height', String(textHeight));
+        bgRect.setAttribute('fill', 'white');
+        if (mainGroup) {
+          mainGroup.appendChild(bgRect);
+        }
+      }
 
       // Insert into main group and remove foreignObject
       if (mainGroup) {

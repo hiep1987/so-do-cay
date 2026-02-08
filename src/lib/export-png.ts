@@ -145,6 +145,7 @@ function prepareExportSvg(svgElement: SVGSVGElement) {
     const textAlign = fo.getAttribute('data-text-align') || 'center';
     const contentX = parseFloat(fo.getAttribute('data-content-x') || '0');
     const contentY = parseFloat(fo.getAttribute('data-content-y') || '0');
+    const labelPosition = fo.getAttribute('data-label-position') || '';
 
     if (originalText) {
       const { text, hasOverline } = convertLatexToPlainText(originalText);
@@ -156,6 +157,19 @@ function prepareExportSvg(svgElement: SVGSVGElement) {
         textAlign,
         hasOverline
       );
+
+      // For center labels, add white background rect behind text (matches TikZ fill=white)
+      if (labelPosition === 'center' && cloneGroup) {
+        const textWidth = text.length * 8 + 6;
+        const textHeight = 18;
+        const bgRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        bgRect.setAttribute('x', String(contentX - textWidth / 2 + 40));
+        bgRect.setAttribute('y', String(contentY + 15 - textHeight / 2));
+        bgRect.setAttribute('width', String(textWidth));
+        bgRect.setAttribute('height', String(textHeight));
+        bgRect.setAttribute('fill', 'white');
+        cloneGroup.appendChild(bgRect);
+      }
 
       if (cloneGroup) {
         cloneGroup.appendChild(textElement);

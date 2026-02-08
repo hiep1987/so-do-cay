@@ -5,7 +5,7 @@
 import { useTreeStore } from '@/hooks/use-tree-store';
 import { PRESET_COLORS } from '@/constants/colors';
 
-const NODE_LABEL_POSITIONS = ['above', 'below', 'left', 'right'] as const;
+const NODE_LABEL_POSITIONS = ['above', 'below', 'left', 'right', 'center'] as const;
 const EDGE_LABEL_POSITIONS = ['left', 'right', 'above', 'below'] as const;
 
 export function PropertyPanel() {
@@ -87,7 +87,8 @@ export function PropertyPanel() {
           </select>
         </div>
 
-        {/* Label offset (distance from node) */}
+        {/* Label offset (distance from node) - hidden for center position */}
+        {selectedNode.labelPosition !== 'center' && (
         <div className="mb-4">
           <label className="block text-xs font-mono text-text-muted mb-1.5">
             labelOffset <span className="text-text-muted">({selectedNode.labelOffset ?? 15}px)</span>
@@ -103,8 +104,10 @@ export function PropertyPanel() {
             className="w-full accent-primary"
           />
         </div>
+        )}
 
-        {/* Color picker */}
+        {/* Color picker - hidden for center position (no dot rendered) */}
+        {selectedNode.labelPosition !== 'center' && (
         <div className="mb-4">
           <label className="block text-xs font-mono text-text-muted mb-1.5">
             color
@@ -126,6 +129,7 @@ export function PropertyPanel() {
             ))}
           </div>
         </div>
+        )}
 
         {/* Add child button */}
         <button
