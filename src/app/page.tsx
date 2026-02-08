@@ -14,9 +14,9 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-background">
+    <div className="flex h-screen w-screen bg-background overflow-x-auto touch-pan-x">
       {/* Main area - toolbar + canvas */}
-      <div className="flex-1 flex flex-col h-full">
+      <div className="flex flex-col h-full min-w-[100vw] sm:min-w-0 sm:flex-1">
         <Toolbar onResetView={handleResetView} />
         <main className="flex-1 h-full overflow-hidden">
           <CanvasErrorBoundary>
@@ -26,7 +26,7 @@ export default function Home() {
       </div>
 
       {/* Right panel - conditionally shows edit or preview panels */}
-      <aside className="w-80 h-full border-l border-border bg-surface p-4 overflow-y-auto">
+      <aside className="w-80 shrink-0 h-full border-l border-border bg-surface p-4 overflow-y-auto">
         <RightPanelContainer canvasRef={canvasRef} />
       </aside>
     </div>

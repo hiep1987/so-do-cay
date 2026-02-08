@@ -56,6 +56,7 @@ export const TreeCanvas = forwardRef<TreeCanvasRef>(function TreeCanvas(_, ref) 
   const [view, setView] = useState<ViewState>({ x: 0, y: 0, scale: 1 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
   const [hasInitializedView, setHasInitializedView] = useState(false);
   // Touch state for two-finger pan + pinch-to-zoom
   const [touchStart, setTouchStart] = useState<{ x: number; y: number; dist: number; scale: number } | null>(null);
@@ -116,6 +117,15 @@ export const TreeCanvas = forwardRef<TreeCanvasRef>(function TreeCanvas(_, ref) 
     setHasInitializedView(true);
   }, [positions, hasInitializedView, centerTree]);
 
+  // Detect touch device for showing appropriate control hints
+  useEffect(() => {
+    const mq = window.matchMedia('(pointer: coarse)');
+    setIsTouchDevice(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setIsTouchDevice(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+
   // Handle mouse wheel zoom
   const handleWheel = useCallback((e: WheelEvent<SVGSVGElement>) => {
     e.preventDefault();
@@ -165,10 +175,11 @@ export const TreeCanvas = forwardRef<TreeCanvasRef>(function TreeCanvas(_, ref) 
     setIsDragging(false);
   }, []);
 
-  // Two-finger touch: pan + pinch-to-zoom
+  // Two-finger touch: pan + pinch-to-zoom (single finger scrolls page on mobile)
   const handleTouchStart = useCallback((e: TouchEvent<SVGSVGElement>) => {
     if (e.touches.length === 2) {
       e.preventDefault();
+      setIsDragging(false);
       const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
       const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
       const dx = e.touches[0].clientX - e.touches[1].clientX;
@@ -207,6 +218,7 @@ export const TreeCanvas = forwardRef<TreeCanvasRef>(function TreeCanvas(_, ref) 
   }, [touchStart]);
 
   const handleTouchEnd = useCallback(() => {
+    setIsDragging(false);
     setTouchStart(null);
   }, []);
 
@@ -239,7 +251,7 @@ export const TreeCanvas = forwardRef<TreeCanvasRef>(function TreeCanvas(_, ref) 
   return (
     <svg
       ref={svgRef}
-      className="w-full h-full cursor-grab active:cursor-grabbing touch-none"
+      className="w-full h-full cursor-grab active:cursor-grabbing touch-pan-x"
       style={{ backgroundColor: '#0F172A' }}
       onWheel={handleWheel}
       onMouseDown={handleMouseDown}
@@ -390,7 +402,7 @@ export const TreeCanvas = forwardRef<TreeCanvasRef>(function TreeCanvas(_, ref) 
         );
       })}
 
-      {/* Zoom indicator - dark mode */}
+      {/* Indicators - dark mode */}
       <text
         x="12"
         y="24"
@@ -399,6 +411,24 @@ export const TreeCanvas = forwardRef<TreeCanvasRef>(function TreeCanvas(_, ref) 
         fill="#64748B"
       >
         zoom: {Math.round(view.scale * 100)}%
+      </text>
+      <text
+        x="12"
+        y="40"
+        fontSize="12"
+        fontFamily="var(--font-geist-mono), monospace"
+        fill="#64748B"
+      >
+        {isTouchDevice ? '1 finger: scroll page' : 'scroll: zoom'}
+      </text>
+      <text
+        x="12"
+        y="56"
+        fontSize="12"
+        fontFamily="var(--font-geist-mono), monospace"
+        fill="#64748B"
+      >
+        {isTouchDevice ? '2 fingers: pan + zoom' : 'drag: pan'}
       </text>
     </svg>
   );
