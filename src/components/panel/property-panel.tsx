@@ -26,9 +26,19 @@ export function PropertyPanel() {
   if (!selectedId || !selectedType) {
     return (
       <div className="mb-6">
-        <h3 className="text-sm font-mono font-semibold text-text-secondary mb-3">
-          // properties
-        </h3>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-mono font-semibold text-text-secondary">
+            // properties
+          </h3>
+          <a
+            href="https://www.facebook.com/hiep.lequoc.31/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs font-mono text-text-muted bg-surface-elevated px-2 py-0.5 rounded hover:text-primary transition-colors"
+          >
+            Le Quoc Hiep
+          </a>
+        </div>
         <p className="text-sm font-mono text-text-muted">
           select a node or edge
         </p>
@@ -40,9 +50,19 @@ export function PropertyPanel() {
   if (selectedType === 'node' && selectedNode) {
     return (
       <div className="mb-6">
-        <h3 className="text-sm font-mono font-semibold text-text-secondary mb-3">
-          // node.properties
-        </h3>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-mono font-semibold text-text-secondary">
+            // node.properties
+          </h3>
+          <a
+            href="https://www.facebook.com/hiep.lequoc.31/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs font-mono text-text-muted bg-surface-elevated px-2 py-0.5 rounded hover:text-primary transition-colors"
+          >
+            Le Quoc Hiep
+          </a>
+        </div>
 
         {/* Label input */}
         <div className="mb-4">
@@ -148,9 +168,19 @@ export function PropertyPanel() {
   if (selectedType === 'edge' && selectedEdge) {
     return (
       <div className="mb-6">
-        <h3 className="text-sm font-mono font-semibold text-text-secondary mb-3">
-          // edge.properties
-        </h3>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-mono font-semibold text-text-secondary">
+            // edge.properties
+          </h3>
+          <a
+            href="https://www.facebook.com/hiep.lequoc.31/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs font-mono text-text-muted bg-surface-elevated px-2 py-0.5 rounded hover:text-primary transition-colors"
+          >
+            Le Quoc Hiep
+          </a>
+        </div>
 
         {/* Label input */}
         <div className="mb-4">
