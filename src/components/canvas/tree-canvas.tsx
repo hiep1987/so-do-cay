@@ -57,8 +57,8 @@ export const TreeCanvas = forwardRef<TreeCanvasRef>(function TreeCanvas(_, ref) 
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [hasInitializedView, setHasInitializedView] = useState(false);
-  // Touch state for two-finger panning
-  const [touchStart, setTouchStart] = useState<{ x: number; y: number } | null>(null);
+  // Touch state for two-finger pan + pinch-to-zoom
+  const [touchStart, setTouchStart] = useState<{ x: number; y: number; dist: number; scale: number } | null>(null);
 
   // Store state
   const { nodes, edges, settings, selectedId, setSelected, setDiagram, addNode, isPreviewMode } = useTreeStore();
@@ -165,26 +165,44 @@ export const TreeCanvas = forwardRef<TreeCanvasRef>(function TreeCanvas(_, ref) 
     setIsDragging(false);
   }, []);
 
-  // Two-finger touch panning for mobile
+  // Two-finger touch: pan + pinch-to-zoom
   const handleTouchStart = useCallback((e: TouchEvent<SVGSVGElement>) => {
     if (e.touches.length === 2) {
       e.preventDefault();
       const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
       const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
-      setTouchStart({ x: midX - view.x, y: midY - view.y });
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const dist = Math.hypot(dx, dy);
+      setTouchStart({ x: midX - view.x, y: midY - view.y, dist, scale: view.scale });
     }
-  }, [view.x, view.y]);
+  }, [view.x, view.y, view.scale]);
 
   const handleTouchMove = useCallback((e: TouchEvent<SVGSVGElement>) => {
     if (e.touches.length === 2 && touchStart) {
       e.preventDefault();
       const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
       const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
-      setView((prev) => ({
-        ...prev,
-        x: midX - touchStart.x,
-        y: midY - touchStart.y,
-      }));
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const dist = Math.hypot(dx, dy);
+
+      // Pinch-to-zoom: scale proportional to finger distance change
+      const newScale = Math.min(Math.max(touchStart.scale * (dist / touchStart.dist), 0.1), 5);
+
+      // Get SVG rect for computing zoom center relative to canvas
+      const rect = svgRef.current?.getBoundingClientRect();
+      if (rect) {
+        const pinchCenterX = midX - rect.left;
+        const pinchCenterY = midY - rect.top;
+        const scaleDiff = newScale - touchStart.scale;
+        const newX = midX - touchStart.x - (pinchCenterX - (midX - touchStart.x)) * (scaleDiff / touchStart.scale);
+        const newY = midY - touchStart.y - (pinchCenterY - (midY - touchStart.y)) * (scaleDiff / touchStart.scale);
+        setView({ x: newX, y: newY, scale: newScale });
+      } else {
+        // Fallback: pan only
+        setView((prev) => ({ ...prev, x: midX - touchStart.x, y: midY - touchStart.y }));
+      }
     }
   }, [touchStart]);
 
