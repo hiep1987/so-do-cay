@@ -44,18 +44,19 @@ export function Toolbar({ onResetView }: ToolbarProps) {
   };
 
   return (
-    <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-surface">
+    <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-surface overflow-x-auto">
       {/* Logo / App name */}
-      <span className="text-sm font-mono font-semibold text-text-secondary mr-2">
+      <img src="/icon.svg" alt="logo" className="w-15 h-15 shrink-0" />
+      <span className="text-sm font-mono font-semibold text-text-secondary mr-2 shrink-0">
         tree-builder
       </span>
 
-      <div className="w-px h-5 bg-border" />
+      <div className="w-px h-5 bg-border shrink-0" />
 
       <button
         onClick={handleAddRoot}
         disabled={rootExists}
-        className="px-3 py-1.5 text-sm font-medium font-mono rounded-md cursor-pointer
+        className="px-3 py-1.5 text-sm font-medium font-mono rounded-md cursor-pointer shrink-0
           bg-primary text-white hover:bg-primary-hover
           disabled:bg-surface-elevated disabled:text-text-muted disabled:cursor-not-allowed
           transition-colors duration-150"
@@ -66,7 +67,7 @@ export function Toolbar({ onResetView }: ToolbarProps) {
       <button
         onClick={handleDelete}
         disabled={!selectedId}
-        className="px-3 py-1.5 text-sm font-medium font-mono rounded-md cursor-pointer
+        className="px-3 py-1.5 text-sm font-medium font-mono rounded-md cursor-pointer shrink-0
           bg-danger-muted text-danger hover:bg-danger hover:text-white
           disabled:bg-surface-elevated disabled:text-text-muted disabled:cursor-not-allowed
           transition-colors duration-150"
@@ -74,11 +75,11 @@ export function Toolbar({ onResetView }: ToolbarProps) {
         delete
       </button>
 
-      <div className="w-px h-5 bg-border mx-1" />
+      <div className="w-px h-5 bg-border mx-1 shrink-0" />
 
       <button
         onClick={() => setPreviewMode(!isPreviewMode)}
-        className={`px-3 py-1.5 text-sm font-medium font-mono rounded-md cursor-pointer
+        className={`px-3 py-1.5 text-sm font-medium font-mono rounded-md cursor-pointer shrink-0
           transition-colors duration-150
           ${
             isPreviewMode
@@ -91,7 +92,7 @@ export function Toolbar({ onResetView }: ToolbarProps) {
 
       <button
         onClick={onResetView}
-        className="px-3 py-1.5 text-sm font-medium font-mono rounded-md cursor-pointer
+        className="px-3 py-1.5 text-sm font-medium font-mono rounded-md cursor-pointer shrink-0
           transition-colors duration-150
           bg-surface-elevated text-text-secondary hover:text-text-primary"
       >
@@ -100,7 +101,7 @@ export function Toolbar({ onResetView }: ToolbarProps) {
 
       <button
         onClick={handleToggleDirection}
-        className="px-3 py-1.5 text-sm font-medium font-mono rounded-md cursor-pointer
+        className="px-3 py-1.5 text-sm font-medium font-mono rounded-md cursor-pointer shrink-0
           transition-colors duration-150
           bg-surface-elevated text-text-secondary hover:text-text-primary"
       >
@@ -111,7 +112,7 @@ export function Toolbar({ onResetView }: ToolbarProps) {
       <div className="flex-1" />
 
       {/* Status indicator */}
-      <span className="text-xs font-mono text-text-muted">
+      <span className="text-xs font-mono text-text-muted whitespace-nowrap shrink-0">
         {selectedId ? `selected: ${selectedType}` : 'no selection'}
       </span>
     </div>
