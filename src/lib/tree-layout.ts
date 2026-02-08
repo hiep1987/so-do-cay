@@ -1,4 +1,5 @@
-// Tree layout algorithm - computes symmetric node positions for tree diagram
+// Tree layout algorithm - matches TikZ sibling distance per level behavior
+// Each level halves the sibling distance: level 1 = siblingDistance, level 2 = siblingDistance/2, etc.
 
 import type { TreeNode, TreeSettings } from '@/types/tree';
 
@@ -19,12 +20,10 @@ function buildTree(nodes: TreeNode[]): TreeNodeWithChildren | null {
 
   const nodeMap = new Map<string, TreeNodeWithChildren>();
 
-  // Create TreeNodeWithChildren for each node
   for (const node of nodes) {
     nodeMap.set(node.id, { node, children: [] });
   }
 
-  // Link children to parents
   let root: TreeNodeWithChildren | null = null;
   for (const node of nodes) {
     const treeNode = nodeMap.get(node.id)!;
@@ -41,65 +40,37 @@ function buildTree(nodes: TreeNode[]): TreeNodeWithChildren | null {
   return root;
 }
 
-// Count leaf nodes in a subtree
-function countLeaves(node: TreeNodeWithChildren): number {
-  if (node.children.length === 0) return 1;
-  return node.children.reduce((sum, child) => sum + countLeaves(child), 0);
-}
-
-// Calculate subtree width based on leaf count
-// Uses uniform leaf spacing so all leaves are evenly distributed
-function calculateSubtreeWidth(
-  node: TreeNodeWithChildren,
-  leafSpacing: number
-): number {
-  const leaves = countLeaves(node);
-  // Width = space needed for all leaves (gaps between them)
-  return (leaves - 1) * leafSpacing;
-}
-
-// Recursive layout function using leaf-count-based subtree widths
-// Ensures all leaves are evenly spaced like TikZ
+// TikZ-matching layout: siblings at depth d are spaced by siblingDistance / 2^(d-1)
+// Children are centered around their parent's position
 function layoutNode(
   node: TreeNodeWithChildren,
   x: number,
   y: number,
+  depth: number,
   settings: TreeSettings,
-  positions: NodePosition[],
-  leafSpacing: number
+  positions: NodePosition[]
 ): void {
   positions.push({ id: node.node.id, x, y });
 
   if (node.children.length === 0) return;
 
-  const { levelDistance, direction } = settings;
+  const { levelDistance, siblingDistance, direction } = settings;
   const isHorizontal = direction === 'horizontal';
 
-  // Calculate width for each child's subtree based on leaf count
-  const childWidths = node.children.map((child) =>
-    calculateSubtreeWidth(child, leafSpacing)
-  );
-
-  // Total width = sum of child subtree widths + gaps between children
-  const totalChildrenWidth =
-    childWidths.reduce((sum, w) => sum + w, 0) +
-    (node.children.length - 1) * leafSpacing;
+  // TikZ halves sibling distance at each level
+  const sibDist = siblingDistance / Math.pow(2, depth);
+  const totalWidth = (node.children.length - 1) * sibDist;
 
   const childPrimary = isHorizontal ? x + levelDistance : y + levelDistance;
-  let currentSecondary = (isHorizontal ? y : x) - totalChildrenWidth / 2;
+  const parentSecondary = isHorizontal ? y : x;
+  const startSecondary = parentSecondary - totalWidth / 2;
 
   for (let i = 0; i < node.children.length; i++) {
-    const child = node.children[i];
-    const childSubtreeWidth = childWidths[i];
-
-    const childSecondary = currentSecondary + childSubtreeWidth / 2;
-
+    const childSecondary = startSecondary + i * sibDist;
     const childX = isHorizontal ? childPrimary : childSecondary;
     const childY = isHorizontal ? childSecondary : childPrimary;
 
-    layoutNode(child, childX, childY, settings, positions, leafSpacing);
-
-    currentSecondary += childSubtreeWidth + leafSpacing;
+    layoutNode(node.children[i], childX, childY, depth + 1, settings, positions);
   }
 }
 
@@ -113,12 +84,9 @@ export function computeTreeLayout(
 
   if (!root) return positions;
 
-  // Start root at center-top (vertical) or left-center (horizontal)
   const startX = settings.direction === 'horizontal' ? 50 : 400;
   const startY = settings.direction === 'horizontal' ? 300 : 50;
-  // Use siblingDistance as the uniform spacing between leaves
-  const leafSpacing = settings.siblingDistance;
-  layoutNode(root, startX, startY, settings, positions, leafSpacing);
+  layoutNode(root, startX, startY, 0, settings, positions);
 
   return positions;
 }
