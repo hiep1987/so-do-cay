@@ -45,7 +45,7 @@ export function TreeNodeComponent({
       <circle
         cx={x}
         cy={y}
-        r={size}
+        r={size * 0.75}
         fill={fillColor}
         stroke={isSelected ? '#3b82f6' : 'none'}
         strokeWidth={isSelected ? 3 : 0}
