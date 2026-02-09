@@ -12,6 +12,8 @@ export function PropertyPanel() {
   const {
     selectedId,
     selectedType,
+    nodes,
+    settings,
     getSelectedNode,
     getSelectedEdge,
     updateNode,
@@ -226,21 +228,29 @@ export function PropertyPanel() {
         </div>
 
         {/* Label offset (distance from edge) */}
-        <div className="mb-4">
-          <label className="block text-xs font-mono text-text-muted mb-1.5">
-            labelOffset <span className="text-text-muted">({selectedEdge.labelOffset ?? 0}px)</span>
-          </label>
-          <input
-            type="range"
-            min="0"
-            max="60"
-            value={selectedEdge.labelOffset ?? 0}
-            onChange={(e) =>
-              updateEdge(selectedEdge.id, { labelOffset: Number(e.target.value) })
-            }
-            className="w-full accent-primary"
-          />
-        </div>
+        {(() => {
+          const isFromRoot = nodes.find((n) => n.id === selectedEdge.sourceId)?.parentId === null;
+          const isHorizontal = settings.direction === 'horizontal';
+          const defaultOffset = isHorizontal && isFromRoot ? 10 : 0;
+          const effectiveOffset = selectedEdge.labelOffset || defaultOffset;
+          return (
+            <div className="mb-4">
+              <label className="block text-xs font-mono text-text-muted mb-1.5">
+                labelOffset <span className="text-text-muted">({effectiveOffset}px)</span>
+              </label>
+              <input
+                type="range"
+                min="0"
+                max="60"
+                value={effectiveOffset}
+                onChange={(e) =>
+                  updateEdge(selectedEdge.id, { labelOffset: Number(e.target.value) })
+                }
+                className="w-full accent-primary"
+              />
+            </div>
+          );
+        })()}
       </div>
     );
   }
