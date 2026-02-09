@@ -118,16 +118,33 @@ function createSvgTextElement(
 function prepareExportSvg(svgElement: SVGSVGElement) {
   const group = svgElement.querySelector('g');
   const bbox = group?.getBBox() || new DOMRect(0, 0, 800, 600);
+
+  // Expand bbox to include foreignObject label positions (rendered outside group)
+  let minX = bbox.x;
+  let minY = bbox.y;
+  let maxX = bbox.x + bbox.width;
+  let maxY = bbox.y + bbox.height;
+  const labelFOs = svgElement.querySelectorAll('foreignObject');
+  labelFOs.forEach((fo) => {
+    const cx = parseFloat(fo.getAttribute('data-content-x') || '0');
+    const cy = parseFloat(fo.getAttribute('data-content-y') || '0');
+    // foreignObject has width=80, height=30
+    minX = Math.min(minX, cx);
+    minY = Math.min(minY, cy);
+    maxX = Math.max(maxX, cx + 80);
+    maxY = Math.max(maxY, cy + 30);
+  });
+
   const padding = 20;
   const bottomPadding = 40;
 
-  const width = bbox.width + padding * 2;
-  const height = bbox.height + padding + bottomPadding;
+  const width = (maxX - minX) + padding * 2;
+  const height = (maxY - minY) + padding + bottomPadding;
 
   const clone = svgElement.cloneNode(true) as SVGSVGElement;
 
-  // Set viewBox and dimensions
-  clone.setAttribute('viewBox', `${bbox.x - padding} ${bbox.y - padding} ${width} ${height}`);
+  // Set viewBox and dimensions using expanded bounds
+  clone.setAttribute('viewBox', `${minX - padding} ${minY - padding} ${width} ${height}`);
   clone.setAttribute('width', String(width));
   clone.setAttribute('height', String(height));
   clone.removeAttribute('style');
