@@ -165,7 +165,21 @@ export const useTreeStore = create<TreeStore>((set, get) => ({
 
   // Settings
   updateSettings: (updates) =>
-    set((state) => ({ settings: { ...state.settings, ...updates } })),
+    set((state) => {
+      const newSettings = { ...state.settings, ...updates };
+      // When direction changes, adjust root edge labelOffset defaults
+      if (updates.direction && updates.direction !== state.settings.direction) {
+        const rootIds = new Set(state.nodes.filter((n) => n.parentId === null).map((n) => n.id));
+        const newEdges = state.edges.map((e) => {
+          if (!rootIds.has(e.sourceId)) return e;
+          // Set 10px for horizontal, 0px for vertical on root edges
+          const newOffset = updates.direction === 'horizontal' ? 10 : 0;
+          return { ...e, labelOffset: newOffset };
+        });
+        return { settings: newSettings, edges: newEdges };
+      }
+      return { settings: newSettings };
+    }),
 
   // Preview mode
   setPreviewMode: (isPreview) => set({ isPreviewMode: isPreview }),
