@@ -34,7 +34,7 @@ export function PropertyPanel() {
             href="https://www.facebook.com/hiep.lequoc.31/"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-xs font-mono text-text-muted bg-surface-elevated px-2 py-0.5 rounded hover:text-primary transition-colors"
+            className="text-xs font-mono text-white bg-orange-500 px-2 py-0.5 rounded hover:bg-orange-600 transition-colors"
           >
             Le Quoc Hiep
           </a>
@@ -58,7 +58,7 @@ export function PropertyPanel() {
             href="https://www.facebook.com/hiep.lequoc.31/"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-xs font-mono text-text-muted bg-surface-elevated px-2 py-0.5 rounded hover:text-primary transition-colors"
+            className="text-xs font-mono text-white bg-orange-500 px-2 py-0.5 rounded hover:bg-orange-600 transition-colors"
           >
             Le Quoc Hiep
           </a>
@@ -176,7 +176,7 @@ export function PropertyPanel() {
             href="https://www.facebook.com/hiep.lequoc.31/"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-xs font-mono text-text-muted bg-surface-elevated px-2 py-0.5 rounded hover:text-primary transition-colors"
+            className="text-xs font-mono text-white bg-orange-500 px-2 py-0.5 rounded hover:bg-orange-600 transition-colors"
           >
             Le Quoc Hiep
           </a>
