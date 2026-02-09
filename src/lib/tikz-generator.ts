@@ -92,14 +92,11 @@ function formatLabel(label: string, position: string, labelOffset?: number, isHo
 }
 
 // Generate edge label markup (returns just the edge statement, caller handles indentation)
-function generateEdgeLabel(edge: TreeEdge, isHorizontal?: boolean, isFromRoot?: boolean): string {
+function generateEdgeLabel(edge: TreeEdge, isHorizontal?: boolean): string {
   if (!edge.label) return '';
   // Rotate position for horizontal layout
   const labelPos = isHorizontal ? (HORIZONTAL_POSITION_MAP[edge.labelPosition] || edge.labelPosition) : edge.labelPosition;
-  // In horizontal mode, edges from root default to 10px for readability
-  const defaultOffset = isHorizontal && isFromRoot ? 10 : 0;
-  const effectiveOffset = edge.labelOffset || defaultOffset;
-  const offsetPt = Math.round(effectiveOffset / 3);
+  const offsetPt = Math.round((edge.labelOffset ?? 0) / 3);
   const posMap: Record<string, string> = {
     left: `left=${offsetPt}pt`,
     right: `right=${offsetPt}pt`,
@@ -162,7 +159,7 @@ function generateNode(
       const edge = edgeMap.get(child.id);
       // Child nodes are rendered at depth+2 (inside child { } block)
       const childStr = generateNode(child, allNodes, edgeMap, depth + 2, false, isHorizontal);
-      const edgeLabel = edge ? generateEdgeLabel(edge, isHorizontal, isRoot) : '';
+      const edgeLabel = edge ? generateEdgeLabel(edge, isHorizontal) : '';
 
       // Format matching reference:
       //     child {

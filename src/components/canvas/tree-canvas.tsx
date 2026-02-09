@@ -351,10 +351,7 @@ export const TreeCanvas = forwardRef<TreeCanvasRef>(function TreeCanvas(_, ref) 
           : edge.labelPosition;
 
         // Offset labels based on their position, using per-edge offset distance
-        // In horizontal mode, edges from root default to 10px for readability
-        const isFromRoot = nodes.find((n) => n.id === edge.sourceId)?.parentId === null;
-        const defaultOffset = isHorizontal && isFromRoot ? 10 : 0;
-        const offset = edge.labelOffset || defaultOffset;
+        const offset = edge.labelOffset ?? 0;
         const labelOffsetX = edgeLabelPos === 'left' ? -offset
                            : edgeLabelPos === 'right' ? offset : 0;
         const labelOffsetY = edgeLabelPos === 'above' ? -offset
