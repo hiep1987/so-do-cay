@@ -43,12 +43,12 @@ const SAMPLE_NODES = [
 ];
 
 const SAMPLE_EDGES = [
-  { id: 'e1', sourceId: 'root', targetId: 'a', label: '0,4', labelPosition: 'left' as const, labelOffset: 15 },
-  { id: 'e2', sourceId: 'root', targetId: 'a-bar', label: '0,6', labelPosition: 'right' as const, labelOffset: 15 },
-  { id: 'e3', sourceId: 'a', targetId: 'b1', label: '0,3', labelPosition: 'left' as const, labelOffset: 15 },
-  { id: 'e4', sourceId: 'a', targetId: 'b1-bar', label: '0,7', labelPosition: 'right' as const, labelOffset: 15 },
-  { id: 'e5', sourceId: 'a-bar', targetId: 'b2', label: '0,4', labelPosition: 'left' as const, labelOffset: 15 },
-  { id: 'e6', sourceId: 'a-bar', targetId: 'b2-bar', label: '0,6', labelPosition: 'right' as const, labelOffset: 15 },
+  { id: 'e1', sourceId: 'root', targetId: 'a', label: '0,4', labelPosition: 'left' as const, labelOffset: 0 },
+  { id: 'e2', sourceId: 'root', targetId: 'a-bar', label: '0,6', labelPosition: 'right' as const, labelOffset: 0 },
+  { id: 'e3', sourceId: 'a', targetId: 'b1', label: '0,3', labelPosition: 'left' as const, labelOffset: 0 },
+  { id: 'e4', sourceId: 'a', targetId: 'b1-bar', label: '0,7', labelPosition: 'right' as const, labelOffset: 0 },
+  { id: 'e5', sourceId: 'a-bar', targetId: 'b2', label: '0,4', labelPosition: 'left' as const, labelOffset: 0 },
+  { id: 'e6', sourceId: 'a-bar', targetId: 'b2-bar', label: '0,6', labelPosition: 'right' as const, labelOffset: 0 },
 ];
 
 export const TreeCanvas = forwardRef<TreeCanvasRef>(function TreeCanvas(_, ref) {
@@ -351,7 +351,7 @@ export const TreeCanvas = forwardRef<TreeCanvasRef>(function TreeCanvas(_, ref) 
           : edge.labelPosition;
 
         // Offset labels based on their position, using per-edge offset distance
-        const offset = edge.labelOffset ?? 15;
+        const offset = edge.labelOffset ?? 0;
         const labelOffsetX = edgeLabelPos === 'left' ? -offset
                            : edgeLabelPos === 'right' ? offset : 0;
         const labelOffsetY = edgeLabelPos === 'above' ? -offset

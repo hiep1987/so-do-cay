@@ -96,7 +96,7 @@ function generateEdgeLabel(edge: TreeEdge, isHorizontal?: boolean): string {
   if (!edge.label) return '';
   // Rotate position for horizontal layout
   const labelPos = isHorizontal ? (HORIZONTAL_POSITION_MAP[edge.labelPosition] || edge.labelPosition) : edge.labelPosition;
-  const offsetPt = Math.round((edge.labelOffset ?? 15) / 3);
+  const offsetPt = Math.round((edge.labelOffset ?? 0) / 3);
   const posMap: Record<string, string> = {
     left: `left=${offsetPt}pt`,
     right: `right=${offsetPt}pt`,

@@ -80,7 +80,7 @@ export const useTreeStore = create<TreeStore>((set, get) => ({
           targetId: newNodeId,
           label: '',
           labelPosition: 'left',
-          labelOffset: 15,
+          labelOffset: 0,
         };
         return {
           nodes: [...state.nodes, newNode],

@@ -228,13 +228,13 @@ export function PropertyPanel() {
         {/* Label offset (distance from edge) */}
         <div className="mb-4">
           <label className="block text-xs font-mono text-text-muted mb-1.5">
-            labelOffset <span className="text-text-muted">({selectedEdge.labelOffset ?? 15}px)</span>
+            labelOffset <span className="text-text-muted">({selectedEdge.labelOffset ?? 0}px)</span>
           </label>
           <input
             type="range"
             min="0"
             max="60"
-            value={selectedEdge.labelOffset ?? 15}
+            value={selectedEdge.labelOffset ?? 0}
             onChange={(e) =>
               updateEdge(selectedEdge.id, { labelOffset: Number(e.target.value) })
             }
