@@ -74,13 +74,17 @@ export const useTreeStore = create<TreeStore>((set, get) => ({
 
       // If has parent, auto-create edge
       if (parentId) {
+        // Edges from root get 10px offset in horizontal mode for readability
+        const parentNode = state.nodes.find((n) => n.id === parentId);
+        const isFromRoot = parentNode?.parentId === null;
+        const isHorizontal = state.settings.direction === 'horizontal';
         const newEdge: TreeEdge = {
           id: `edge-${Date.now()}`,
           sourceId: parentId,
           targetId: newNodeId,
           label: '',
           labelPosition: 'left',
-          labelOffset: 0,
+          labelOffset: isHorizontal && isFromRoot ? 10 : 0,
         };
         return {
           nodes: [...state.nodes, newNode],
