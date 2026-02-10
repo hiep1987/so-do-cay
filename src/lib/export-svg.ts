@@ -106,17 +106,33 @@ export function exportSvg(svgElement: SVGSVGElement, filename = 'tree-diagram.sv
   clone.style.backgroundColor = '';
   clone.removeAttribute('style');
 
-  // Calculate bounding box of content
+  // Calculate bounding box including label positions outside the group
   const bbox = calculateContentBounds(svgElement);
-  const padding = 40; // Padding for labels
-  const bottomPadding = 60; // Extra padding for bottom labels
+  let minX = bbox.x;
+  let minY = bbox.y;
+  let maxX = bbox.x + bbox.width;
+  let maxY = bbox.y + bbox.height;
+
+  // Expand bounds to include foreignObject labels (rendered outside main group)
+  const labelFOs = svgElement.querySelectorAll('foreignObject');
+  labelFOs.forEach((fo) => {
+    const cx = parseFloat(fo.getAttribute('data-content-x') || '0');
+    const cy = parseFloat(fo.getAttribute('data-content-y') || '0');
+    minX = Math.min(minX, cx);
+    minY = Math.min(minY, cy);
+    maxX = Math.max(maxX, cx + 80);
+    maxY = Math.max(maxY, cy + 30);
+  });
+
+  const padding = 40;
+  const bottomPadding = 60;
+  const width = (maxX - minX) + padding * 2;
+  const height = (maxY - minY) + padding + bottomPadding;
 
   // Set viewBox to fit content with padding
-  clone.setAttribute('viewBox',
-    `${bbox.x - padding} ${bbox.y - padding} ${bbox.width + padding * 2} ${bbox.height + padding + bottomPadding}`
-  );
-  clone.setAttribute('width', String(bbox.width + padding * 2));
-  clone.setAttribute('height', String(bbox.height + padding + bottomPadding));
+  clone.setAttribute('viewBox', `${minX - padding} ${minY - padding} ${width} ${height}`);
+  clone.setAttribute('width', String(width));
+  clone.setAttribute('height', String(height));
 
   // Remove transform from main group (reset pan/zoom)
   const mainGroup = clone.querySelector('g');
