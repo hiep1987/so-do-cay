@@ -204,13 +204,8 @@ function prepareExportSvg(svgElement: SVGSVGElement) {
   const backgroundRects = clone.querySelectorAll('rect[fill^="url(#"]');
   backgroundRects.forEach((rect) => rect.remove());
 
-  // Remove zoom indicator text
-  const texts = clone.querySelectorAll('text');
-  texts.forEach((text) => {
-    if (text.textContent?.includes('%')) {
-      text.remove();
-    }
-  });
+  // Remove all UI hint texts (zoom %, "scroll: zoom", "drag: pan")
+  clone.querySelectorAll(':scope > text').forEach((t) => t.remove());
 
   return { clone, width, height };
 }

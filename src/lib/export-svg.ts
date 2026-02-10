@@ -154,11 +154,8 @@ export function exportSvg(svgElement: SVGSVGElement, filename = 'tree-diagram.sv
     dotsRect.remove();
   }
 
-  // Remove zoom indicator text
-  const zoomText = clone.querySelector('text');
-  if (zoomText) {
-    zoomText.remove();
-  }
+  // Remove all UI hint texts (zoom %, "scroll: zoom", "drag: pan")
+  clone.querySelectorAll(':scope > text').forEach((t) => t.remove());
 
   // Replace foreignObject elements with native SVG text
   // foreignObject is not supported by Inkscape and other desktop SVG editors
