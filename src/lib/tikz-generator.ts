@@ -91,20 +91,15 @@ function formatLabel(label: string, position: string, labelOffset?: number, isHo
   return `, label={${shiftStyle}${pos}:{${labelContent}}}`;
 }
 
-// Generate edge label markup (returns just the edge statement, caller handles indentation)
+// Generate edge label markup with position and xshift/yshift (returns just the edge statement)
 function generateEdgeLabel(edge: TreeEdge, isHorizontal?: boolean): string {
   if (!edge.label) return '';
-  // Rotate position for horizontal layout
-  const labelPos = isHorizontal ? (HORIZONTAL_POSITION_MAP[edge.labelPosition] || edge.labelPosition) : edge.labelPosition;
-  const offsetPt = Math.round((edge.labelOffset ?? 0) / 3);
-  const posMap: Record<string, string> = {
-    left: `left=${offsetPt}pt`,
-    right: `right=${offsetPt}pt`,
-    above: `above=${offsetPt}pt`,
-    below: `below=${offsetPt}pt`,
-  };
-  const pos = posMap[labelPos] || `left=${offsetPt}pt`;
-  return `edge from parent node[${pos}] {$${edge.label}$}`;
+  const xShiftPt = Math.round((edge.labelOffsetX ?? 0) / 3);
+  const yShiftPt = Math.round((edge.labelOffsetY ?? 0) / 3);
+  // Rotate label position for horizontal layout
+  const pos = isHorizontal ? (HORIZONTAL_POSITION_MAP[edge.labelPosition] || edge.labelPosition) : edge.labelPosition;
+  // Include midway + position so label is offset from the edge midpoint (matching canvas rendering)
+  return `edge from parent node[midway,${pos},xshift=${xShiftPt}pt,yshift=${-yShiftPt}pt] {$${edge.label}$}`;
 }
 
 // Recursively generate node and children TikZ code
