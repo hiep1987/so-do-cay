@@ -84,7 +84,8 @@ export const useTreeStore = create<TreeStore>((set, get) => ({
           targetId: newNodeId,
           label: '',
           labelPosition: 'left',
-          labelOffset: isHorizontal && isFromRoot ? 10 : 0,
+          labelOffsetX: isHorizontal && isFromRoot ? -10 : 0,
+          labelOffsetY: 0,
         };
         return {
           nodes: [...state.nodes, newNode],
@@ -172,9 +173,9 @@ export const useTreeStore = create<TreeStore>((set, get) => ({
         const rootIds = new Set(state.nodes.filter((n) => n.parentId === null).map((n) => n.id));
         const newEdges = state.edges.map((e) => {
           if (!rootIds.has(e.sourceId)) return e;
-          // Set 10px for horizontal, 0px for vertical on root edges
-          const newOffset = updates.direction === 'horizontal' ? 10 : 0;
-          return { ...e, labelOffset: newOffset };
+          // Set -10px for horizontal, 0px for vertical on root edges
+          const newOffset = updates.direction === 'horizontal' ? -10 : 0;
+          return { ...e, labelOffsetX: newOffset };
         });
         return { settings: newSettings, edges: newEdges };
       }
