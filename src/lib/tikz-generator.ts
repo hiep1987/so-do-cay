@@ -91,15 +91,29 @@ function formatLabel(label: string, position: string, labelOffset?: number, isHo
   return `, label={${shiftStyle}${pos}:{${labelContent}}}`;
 }
 
-// Generate edge label markup with position and xshift/yshift (returns just the edge statement)
+// Direction vectors matching canvas LatexLabel POSITION_DIRS (default offset = 15px)
+const EDGE_LABEL_DIRS: Record<string, { dx: number; dy: number; anchor: string }> = {
+  above: { dx: 0, dy: -1, anchor: 'south' },
+  below: { dx: 0, dy: 1, anchor: 'north' },
+  left: { dx: -1, dy: 0, anchor: 'east' },
+  right: { dx: 1, dy: 0, anchor: 'west' },
+};
+
+// Generate edge label markup matching canvas positioning exactly
+// Canvas computes: position = midpoint + (labelOffsetX, labelOffsetY) + direction*15px
+// TikZ: use sloped=false so xshift/yshift are absolute (not path-relative)
 function generateEdgeLabel(edge: TreeEdge, isHorizontal?: boolean): string {
   if (!edge.label) return '';
-  const xShiftPt = Math.round((edge.labelOffsetX ?? 0) / 3);
-  const yShiftPt = Math.round((edge.labelOffsetY ?? 0) / 3);
   // Rotate label position for horizontal layout
   const pos = isHorizontal ? (HORIZONTAL_POSITION_MAP[edge.labelPosition] || edge.labelPosition) : edge.labelPosition;
-  // Include midway + position so label is offset from the edge midpoint (matching canvas rendering)
-  return `edge from parent node[midway,${pos},xshift=${xShiftPt}pt,yshift=${-yShiftPt}pt] {$${edge.label}$}`;
+  const dir = EDGE_LABEL_DIRS[pos] || EDGE_LABEL_DIRS.left;
+  // Convert px offsets to pt (calibrated: 1pt ≈ 1.667px, so px * 0.6 ≈ pt)
+  // Note: direction offset (15px) is NOT added here because TikZ anchor already handles
+  // the text alignment that the canvas achieves via its position direction shift
+  const xPt = Math.round((edge.labelOffsetX ?? 0) * 0.6);
+  // TikZ Y-axis is inverted relative to canvas (positive = up in TikZ, down in canvas)
+  const yPt = -Math.round((edge.labelOffsetY ?? 0) * 0.6);
+  return `edge from parent node[pos=0.5,sloped=false,anchor=${dir.anchor},xshift=${xPt}pt,yshift=${yPt}pt] {$${edge.label}$}`;
 }
 
 // Recursively generate node and children TikZ code
