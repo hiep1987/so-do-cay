@@ -30,7 +30,7 @@ const POSITION_DIRS: Record<string, { dx: number; dy: number; anchor: string }> 
 export function LatexLabel({ text, x, y, position = 'above', labelOffset, viewX = 0, viewY = 0, scale = 1 }: LatexLabelProps) {
   const dir = POSITION_DIRS[position];
   // For center position, no offset distance is applied
-  const dist = position === 'center' ? 0 : (labelOffset ?? 15);
+  const dist = position === 'center' ? 0 : (labelOffset ?? 20);
   const offset = { dx: dir.dx * dist, dy: dir.dy * dist, anchor: dir.anchor };
 
   // Render LaTeX, fallback to plain text if parsing fails

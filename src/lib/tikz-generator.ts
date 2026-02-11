@@ -81,7 +81,7 @@ function formatLabel(label: string, position: string, labelOffset?: number, isHo
   // Rotate position for horizontal layout
   const pos = isHorizontal ? (HORIZONTAL_POSITION_MAP[position] || position) : position;
 
-  const distPt = Math.round((labelOffset ?? 15) / 3);
+  const distPt = Math.round((labelOffset ?? 20) / 3);
   // above: yshift>0, below: yshift<0, left: xshift<0, right: xshift>0
   const shiftAxis = (pos === 'left' || pos === 'right') ? 'xshift' : 'yshift';
   const sign = (pos === 'above' || pos === 'right') ? '' : '-';

@@ -63,12 +63,13 @@ export const useTreeStore = create<TreeStore>((set, get) => ({
   addNode: (parentId) =>
     set((state) => {
       const newNodeId = generateId();
+      const isVertical = state.settings.direction === 'vertical';
       const newNode: TreeNode = {
         id: newNodeId,
         parentId,
         label: parentId ? 'New' : '',
         labelPosition: 'below',
-        labelOffset: 15,
+        labelOffset: isVertical ? 20 : 15,
         color: 'orange',
       };
 
@@ -177,7 +178,14 @@ export const useTreeStore = create<TreeStore>((set, get) => ({
           const newOffset = updates.direction === 'horizontal' ? -10 : 0;
           return { ...e, labelOffsetX: newOffset };
         });
-        return { settings: newSettings, edges: newEdges };
+        // Update node labelOffset defaults: 20px vertical, 15px horizontal
+        const defaultOffset = updates.direction === 'vertical' ? 20 : 15;
+        const newNodes = state.nodes.map((n) => {
+          const currentDefault = state.settings.direction === 'vertical' ? 20 : 15;
+          if (n.labelOffset === currentDefault) return { ...n, labelOffset: defaultOffset };
+          return n;
+        });
+        return { settings: newSettings, edges: newEdges, nodes: newNodes };
       }
       return { settings: newSettings };
     }),

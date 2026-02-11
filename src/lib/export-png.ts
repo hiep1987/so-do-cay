@@ -1,125 +1,76 @@
-// PNG export utility using native SVG→Canvas rendering
-// Produces high-quality vector-crisp output without html2canvas dependency
+// PNG export utility using SVG→Canvas rendering
+// Embeds KaTeX HTML with inlined CSS in foreignObject for accurate LaTeX rendering
+// Uses data: URI to avoid tainted canvas security restriction
+
+import katex from 'katex';
 
 /**
- * Convert LaTeX commands to plain text for SVG export
- * Returns { text, hasOverline } for native SVG rendering
+ * Collect KaTeX CSS from page stylesheets for embedding in export SVG.
  */
-function convertLatexToPlainText(latex: string): { text: string; hasOverline: boolean } {
-  let result = latex;
-  let hasOverline = false;
-
-  // Handle \overline{...} - extract content and mark for overline
-  const overlineMatch = result.match(/\\overline\{([^}]*)\}/);
-  if (overlineMatch) {
-    hasOverline = true;
-    result = result.replace(/\\overline\{([^}]*)\}/g, '$1');
-  }
-
-  // Handle \bar{X} - use combining macron for single chars
-  result = result.replace(/\\bar\{([^}]*)\}/g, '$1\u0304');
-
-  // Handle \text{...} - just extract content
-  result = result.replace(/\\text\{([^}]*)\}/g, '$1');
-
-  // Remove remaining backslashes from other LaTeX commands
-  result = result.replace(/\\\\/g, '');
-
-  return { text: result, hasOverline };
-}
-
-/**
- * Create native SVG text element to replace foreignObject
- * This avoids Safari's foreignObject rendering bugs
- */
-function createSvgTextElement(
-  doc: Document,
-  text: string,
-  x: number,
-  y: number,
-  textAlign: string,
-  hasOverline: boolean
-): SVGElement {
-  const textEl = doc.createElementNS('http://www.w3.org/2000/svg', 'text');
-
-  // Adjust position: foreignObject has width=80, height=30
-  // Text needs to be positioned at center of that box
-  let textX = x + 40; // center of 80px width
-  const textY = y + 15; // center of 30px height
-
-  // Adjust X based on alignment
-  if (textAlign === 'right') {
-    textX = x + 80; // right edge
-  } else if (textAlign === 'left') {
-    textX = x; // left edge
-  }
-
-  textEl.setAttribute('x', String(textX));
-  textEl.setAttribute('y', String(textY));
-
-  // Set text anchor based on alignment
-  const anchor = textAlign === 'right' ? 'end' : textAlign === 'left' ? 'start' : 'middle';
-  textEl.setAttribute('text-anchor', anchor);
-  textEl.setAttribute('dominant-baseline', 'middle');
-
-  // Set font styling - italic Times New Roman
-  textEl.setAttribute('font-family', '"Times New Roman", Georgia, serif');
-  textEl.setAttribute('font-size', '16');
-  textEl.setAttribute('font-style', 'italic');
-  textEl.setAttribute('fill', '#000000');
-
-  textEl.textContent = text;
-
-  // If overline needed, create a group with text + line
-  if (hasOverline) {
-    const group = doc.createElementNS('http://www.w3.org/2000/svg', 'g');
-    group.appendChild(textEl);
-
-    // Create overline as a line element
-    // Estimate text width based on character count (approx 9px per char for 16px font)
-    const textWidth = text.length * 9;
-    const lineY = textY - 10; // Position above text
-
-    // Calculate line start/end based on alignment
-    let lineX1: number, lineX2: number;
-    if (textAlign === 'right') {
-      lineX1 = textX - textWidth;
-      lineX2 = textX;
-    } else if (textAlign === 'left') {
-      lineX1 = textX;
-      lineX2 = textX + textWidth;
-    } else {
-      lineX1 = textX - textWidth / 2;
-      lineX2 = textX + textWidth / 2;
+function getKatexCss(): string {
+  for (const sheet of Array.from(document.styleSheets)) {
+    try {
+      const rules = Array.from(sheet.cssRules);
+      const hasKatex = rules.some((r) => r.cssText.includes('.katex'));
+      if (hasKatex) {
+        return rules.map((r) => r.cssText).join('\n');
+      }
+    } catch {
+      // Cross-origin stylesheet, skip
     }
-
-    const lineEl = doc.createElementNS('http://www.w3.org/2000/svg', 'line');
-    lineEl.setAttribute('x1', String(lineX1));
-    lineEl.setAttribute('y1', String(lineY));
-    lineEl.setAttribute('x2', String(lineX2));
-    lineEl.setAttribute('y2', String(lineY));
-    lineEl.setAttribute('stroke', '#000000');
-    lineEl.setAttribute('stroke-width', '1');
-    group.appendChild(lineEl);
-
-    return group;
   }
-
-  return textEl;
+  return '';
 }
 
 /**
- * Prepare a clean SVG clone for export:
- * - Reset transform, set viewBox to content bounds
- * - Replace foreignObject with native SVG text
- * - Remove grid, background, zoom indicator
- * Returns { clone, width, height }
+ * Create a self-contained foreignObject with KaTeX-rendered HTML for export.
+ * Positioned at content coordinates (scale=1, no pan offset).
+ */
+function createExportForeignObject(
+  doc: Document,
+  originalText: string,
+  contentX: number,
+  contentY: number,
+  textAlign: string,
+  labelPosition: string
+): SVGForeignObjectElement {
+  const fo = doc.createElementNS('http://www.w3.org/2000/svg', 'foreignObject') as SVGForeignObjectElement;
+  fo.setAttribute('x', String(contentX));
+  fo.setAttribute('y', String(contentY));
+  fo.setAttribute('width', '80');
+  fo.setAttribute('height', '30');
+  fo.setAttribute('style', 'overflow: visible;');
+
+  let html: string;
+  try {
+    html = katex.renderToString(originalText, { throwOnError: false, displayMode: false });
+  } catch {
+    html = originalText;
+  }
+
+  const justifyContent = textAlign === 'right' ? 'flex-end' : textAlign === 'left' ? 'flex-start' : 'center';
+  const alignItems = (labelPosition === 'left' || labelPosition === 'right' || labelPosition === 'center')
+    ? 'center' : 'flex-start';
+  let extraStyle = '';
+  if (labelPosition === 'center') {
+    extraStyle = 'background-color: white; color: #000000; padding: 1px 3px; width: fit-content; margin: 0 auto;';
+  }
+
+  // Build XHTML body with xmlns for SVG foreignObject embedding
+  const xhtmlBody = `<div xmlns="http://www.w3.org/1999/xhtml" style="position: relative; width: 100%; height: 100%;"><div style="font-size: 14px; white-space: nowrap; height: 100%; display: flex; align-items: ${alignItems}; justify-content: ${justifyContent}; ${extraStyle}">${html}</div></div>`;
+
+  fo.innerHTML = xhtmlBody;
+  return fo;
+}
+
+/**
+ * Prepare SVG clone for PNG export with embedded KaTeX foreignObjects.
+ * Inlines KaTeX CSS so the SVG is fully self-contained.
  */
 function prepareExportSvg(svgElement: SVGSVGElement) {
   const group = svgElement.querySelector('g');
   const bbox = group?.getBBox() || new DOMRect(0, 0, 800, 600);
 
-  // Expand bbox to include foreignObject label positions (rendered outside group)
   let minX = bbox.x;
   let minY = bbox.y;
   let maxX = bbox.x + bbox.width;
@@ -128,7 +79,6 @@ function prepareExportSvg(svgElement: SVGSVGElement) {
   labelFOs.forEach((fo) => {
     const cx = parseFloat(fo.getAttribute('data-content-x') || '0');
     const cy = parseFloat(fo.getAttribute('data-content-y') || '0');
-    // foreignObject has width=80, height=30
     minX = Math.min(minX, cx);
     minY = Math.min(minY, cy);
     maxX = Math.max(maxX, cx + 80);
@@ -137,25 +87,31 @@ function prepareExportSvg(svgElement: SVGSVGElement) {
 
   const padding = 20;
   const bottomPadding = 40;
-
   const width = (maxX - minX) + padding * 2;
   const height = (maxY - minY) + padding + bottomPadding;
 
   const clone = svgElement.cloneNode(true) as SVGSVGElement;
-
-  // Set viewBox and dimensions using expanded bounds
   clone.setAttribute('viewBox', `${minX - padding} ${minY - padding} ${width} ${height}`);
   clone.setAttribute('width', String(width));
   clone.setAttribute('height', String(height));
   clone.removeAttribute('style');
 
-  // Reset transform on main group
   const cloneGroup = clone.querySelector('g');
   if (cloneGroup) {
     cloneGroup.removeAttribute('transform');
   }
 
-  // Replace foreignObjects with native SVG text elements
+  // Inject KaTeX CSS into SVG defs for self-contained rendering
+  const katexCss = getKatexCss();
+  if (katexCss) {
+    const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+    const style = document.createElementNS('http://www.w3.org/2000/svg', 'style');
+    style.textContent = katexCss;
+    defs.appendChild(style);
+    clone.insertBefore(defs, clone.firstChild);
+  }
+
+  // Replace cloned foreignObjects with fresh KaTeX-rendered ones at export coords
   const foreignObjects = Array.from(clone.querySelectorAll('foreignObject'));
   foreignObjects.forEach((fo) => {
     const originalText = fo.getAttribute('data-original-text') || '';
@@ -165,54 +121,30 @@ function prepareExportSvg(svgElement: SVGSVGElement) {
     const labelPosition = fo.getAttribute('data-label-position') || '';
 
     if (originalText) {
-      const { text, hasOverline } = convertLatexToPlainText(originalText);
-      const textElement = createSvgTextElement(
-        document,
-        text,
-        contentX,
-        contentY,
-        textAlign,
-        hasOverline
+      const exportFo = createExportForeignObject(
+        document, originalText, contentX, contentY, textAlign, labelPosition
       );
-
-      // For center labels, add white background rect behind text (matches TikZ fill=white)
-      if (labelPosition === 'center' && cloneGroup) {
-        const textWidth = text.length * 8 + 6;
-        const textHeight = 18;
-        const bgRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-        bgRect.setAttribute('x', String(contentX - textWidth / 2 + 40));
-        bgRect.setAttribute('y', String(contentY + 15 - textHeight / 2));
-        bgRect.setAttribute('width', String(textWidth));
-        bgRect.setAttribute('height', String(textHeight));
-        bgRect.setAttribute('fill', 'white');
-        cloneGroup.appendChild(bgRect);
-      }
-
-      if (cloneGroup) {
-        cloneGroup.appendChild(textElement);
-      }
+      // Append to SVG root (not group) — matches live canvas layout
+      clone.appendChild(exportFo);
     }
-
     fo.remove();
   });
 
-  // Remove grid pattern and background
-  const gridPattern = clone.querySelector('defs');
-  if (gridPattern) {
-    gridPattern.remove();
-  }
-  const backgroundRects = clone.querySelectorAll('rect[fill^="url(#"]');
-  backgroundRects.forEach((rect) => rect.remove());
+  // Remove grid pattern defs (keep our KaTeX CSS defs)
+  clone.querySelectorAll('defs').forEach((d) => {
+    if (d.querySelector('pattern')) d.remove();
+  });
+  clone.querySelectorAll('rect[fill^="url(#"]').forEach((r) => r.remove());
 
-  // Remove all UI hint texts (zoom %, "scroll: zoom", "drag: pan")
+  // Remove UI hint texts
   clone.querySelectorAll(':scope > text').forEach((t) => t.remove());
 
   return { clone, width, height };
 }
 
 /**
- * Export SVG to high-quality PNG using native SVG→Canvas rendering.
- * Serializes cleaned SVG, loads as Image, draws onto scaled canvas.
+ * Export SVG to high-quality PNG.
+ * Uses data: URI (not blob: URI) to avoid tainted canvas with foreignObject.
  * Default scale=3 for crisp 3x resolution.
  */
 export async function exportPng(
@@ -222,7 +154,7 @@ export async function exportPng(
 ) {
   const { clone, width, height } = prepareExportSvg(svgElement);
 
-  // Add white background rect to the SVG itself
+  // Add white background
   const bgRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
   bgRect.setAttribute('x', clone.viewBox.baseVal.x.toString());
   bgRect.setAttribute('y', clone.viewBox.baseVal.y.toString());
@@ -231,13 +163,11 @@ export async function exportPng(
   bgRect.setAttribute('fill', 'white');
   clone.insertBefore(bgRect, clone.firstChild);
 
-  // Serialize SVG to string
+  // Serialize SVG to data: URI (avoids tainted canvas from foreignObject)
   const serializer = new XMLSerializer();
   const svgString = serializer.serializeToString(clone);
-  const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
-  const svgUrl = URL.createObjectURL(svgBlob);
+  const svgDataUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgString);
 
-  // Load SVG as image and draw onto canvas
   const img = new Image();
   img.width = width;
   img.height = height;
@@ -254,14 +184,10 @@ export async function exportPng(
         return;
       }
 
-      // Fill white background
       ctx.fillStyle = 'white';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      // Draw SVG at scaled resolution
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-      // Convert to PNG and download
       canvas.toBlob((blob) => {
         if (blob) {
           const url = URL.createObjectURL(blob);
@@ -278,8 +204,6 @@ export async function exportPng(
     };
 
     img.onerror = () => reject(new Error('Failed to load SVG as image'));
-    img.src = svgUrl;
+    img.src = svgDataUrl;
   });
-
-  URL.revokeObjectURL(svgUrl);
 }

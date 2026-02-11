@@ -33,22 +33,22 @@ export interface TreeCanvasRef {
 // Structure: Root O → A/Ā → B/B̄
 // Labels use LaTeX format directly for TikZ export
 const SAMPLE_NODES = [
-  { id: 'root', parentId: null, label: '\\text{Gốc } O', labelPosition: 'above' as const, labelOffset: 15, color: 'orange' },
-  { id: 'a', parentId: 'root', label: 'A', labelPosition: 'left' as const, labelOffset: 15, color: 'cyan' },
-  { id: 'a-bar', parentId: 'root', label: '\\overline{A}', labelPosition: 'right' as const, labelOffset: 15, color: 'green' },
-  { id: 'b1', parentId: 'a', label: 'B', labelPosition: 'below' as const, labelOffset: 15, color: 'pink' },
-  { id: 'b1-bar', parentId: 'a', label: '\\overline{B}', labelPosition: 'below' as const, labelOffset: 15, color: 'violet' },
-  { id: 'b2', parentId: 'a-bar', label: 'B', labelPosition: 'below' as const, labelOffset: 15, color: 'pink' },
-  { id: 'b2-bar', parentId: 'a-bar', label: '\\overline{B}', labelPosition: 'below' as const, labelOffset: 15, color: 'violet' },
+  { id: 'root', parentId: null, label: '\\text{Gốc } O', labelPosition: 'above' as const, labelOffset: 20, color: 'orange' },
+  { id: 'a', parentId: 'root', label: 'A', labelPosition: 'left' as const, labelOffset: 20, color: 'cyan' },
+  { id: 'a-bar', parentId: 'root', label: '\\overline{A}', labelPosition: 'right' as const, labelOffset: 20, color: 'green' },
+  { id: 'b1', parentId: 'a', label: 'B', labelPosition: 'below' as const, labelOffset: 20, color: 'pink' },
+  { id: 'b1-bar', parentId: 'a', label: '\\overline{B}', labelPosition: 'below' as const, labelOffset: 20, color: 'violet' },
+  { id: 'b2', parentId: 'a-bar', label: 'B', labelPosition: 'below' as const, labelOffset: 20, color: 'pink' },
+  { id: 'b2-bar', parentId: 'a-bar', label: '\\overline{B}', labelPosition: 'below' as const, labelOffset: 20, color: 'violet' },
 ];
 
 const SAMPLE_EDGES = [
-  { id: 'e1', sourceId: 'root', targetId: 'a', label: '0,4', labelPosition: 'left' as const, labelOffset: 0 },
-  { id: 'e2', sourceId: 'root', targetId: 'a-bar', label: '0,6', labelPosition: 'right' as const, labelOffset: 0 },
-  { id: 'e3', sourceId: 'a', targetId: 'b1', label: '0,3', labelPosition: 'left' as const, labelOffset: 0 },
-  { id: 'e4', sourceId: 'a', targetId: 'b1-bar', label: '0,7', labelPosition: 'right' as const, labelOffset: 0 },
-  { id: 'e5', sourceId: 'a-bar', targetId: 'b2', label: '0,4', labelPosition: 'left' as const, labelOffset: 0 },
-  { id: 'e6', sourceId: 'a-bar', targetId: 'b2-bar', label: '0,6', labelPosition: 'right' as const, labelOffset: 0 },
+  { id: 'e1', sourceId: 'root', targetId: 'a', label: '0,4', labelPosition: 'left' as const, labelOffsetX: 0, labelOffsetY: 0 },
+  { id: 'e2', sourceId: 'root', targetId: 'a-bar', label: '0,6', labelPosition: 'right' as const, labelOffsetX: 0, labelOffsetY: 0 },
+  { id: 'e3', sourceId: 'a', targetId: 'b1', label: '0,3', labelPosition: 'left' as const, labelOffsetX: 0, labelOffsetY: 0 },
+  { id: 'e4', sourceId: 'a', targetId: 'b1-bar', label: '0,7', labelPosition: 'right' as const, labelOffsetX: 0, labelOffsetY: 0 },
+  { id: 'e5', sourceId: 'a-bar', targetId: 'b2', label: '0,4', labelPosition: 'left' as const, labelOffsetX: 0, labelOffsetY: 0 },
+  { id: 'e6', sourceId: 'a-bar', targetId: 'b2-bar', label: '0,6', labelPosition: 'right' as const, labelOffsetX: 0, labelOffsetY: 0 },
 ];
 
 export const TreeCanvas = forwardRef<TreeCanvasRef>(function TreeCanvas(_, ref) {
@@ -350,12 +350,9 @@ export const TreeCanvas = forwardRef<TreeCanvasRef>(function TreeCanvas(_, ref) 
           ? (HORIZONTAL_POSITION_MAP[edge.labelPosition] || edge.labelPosition)
           : edge.labelPosition;
 
-        // Offset labels based on their position, using per-edge offset distance
-        const offset = edge.labelOffset ?? 0;
-        const labelOffsetX = edgeLabelPos === 'left' ? -offset
-                           : edgeLabelPos === 'right' ? offset : 0;
-        const labelOffsetY = edgeLabelPos === 'above' ? -offset
-                           : edgeLabelPos === 'below' ? offset : 0;
+        // Apply separate X and Y offset for edge labels
+        const labelOffsetX = edge.labelOffsetX ?? 0;
+        const labelOffsetY = edge.labelOffsetY ?? 0;
 
         // Map edge label position to LatexLabel anchor position
         const labelAnchor = edgeLabelPos;
