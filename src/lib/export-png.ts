@@ -41,11 +41,28 @@ function createExportForeignObject(
   fo.setAttribute('height', '30');
   fo.setAttribute('style', 'overflow: visible;');
 
+  // Normalize input to NFC so Vietnamese diacritics (e.g. "ố") are
+  // precomposed codepoints, preventing misaligned combining marks in PNG
+  const normalizedText = originalText.normalize('NFC');
+
+  // KaTeX decomposes accented characters (e.g. "ố" → o + ˆ + ˊ) using nested
+  // vlist overlays that break in data URI SVG→canvas rendering. If the label
+  // contains non-ASCII text and no complex LaTeX commands, render as plain
+  // styled HTML to preserve correct diacritics positioning.
   let html: string;
-  try {
-    html = katex.renderToString(originalText, { throwOnError: false, displayMode: false });
-  } catch {
-    html = originalText;
+  const hasNonAscii = /[^\x00-\x7F]/.test(normalizedText);
+  const hasLatexCommands = /\\(?:frac|dfrac|sqrt|overline|bar|sum|int|prod|lim)\b/.test(normalizedText);
+
+  if (hasNonAscii && !hasLatexCommands) {
+    // Strip \text{} wrappers if present, keep content as-is
+    const plain = normalizedText.replace(/\\text\{([^}]*)\}/g, '$1');
+    html = `<span style="font-family: 'Times New Roman', Times, serif; font-style: italic; font-size: 14px;">${plain}</span>`;
+  } else {
+    try {
+      html = katex.renderToString(normalizedText, { throwOnError: false, displayMode: false });
+    } catch {
+      html = normalizedText;
+    }
   }
 
   const justifyContent = textAlign === 'right' ? 'flex-end' : textAlign === 'left' ? 'flex-start' : 'center';
