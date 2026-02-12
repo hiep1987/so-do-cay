@@ -160,7 +160,7 @@ export function createSvgLabelElement(
       line.setAttribute('stroke', 'black');
       line.setAttribute('stroke-width', '0.8');
       g.appendChild(line);
-      g.appendChild(makeText(doc, fcx, cy + 10, tok.den, { 'text-anchor': 'middle', 'dominant-baseline': 'hanging' }));
+      g.appendChild(makeText(doc, fcx, cy + 4, tok.den, { 'text-anchor': 'middle', 'dominant-baseline': 'hanging' }));
       xOff += fw + 4;
     } else if (tok.type === 'overline') {
       const t = makeText(doc, x, cy, tok.value);
