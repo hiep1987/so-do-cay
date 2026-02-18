@@ -112,7 +112,9 @@ function generateEdgeLabel(edge: TreeEdge, isHorizontal?: boolean): string {
   // the text alignment that the canvas achieves via its position direction shift
   const xPt = Math.round((edge.labelOffsetX ?? 0) * 0.6);
   // TikZ Y-axis is inverted relative to canvas (positive = up in TikZ, down in canvas)
-  const yPt = -Math.round((edge.labelOffsetY ?? 0) * 0.6);
+  // In horizontal mode, canvas negates Y for intuitive direction, so TikZ keeps original sign
+  const rawYPt = Math.round((edge.labelOffsetY ?? 0) * 0.6);
+  const yPt = isHorizontal ? rawYPt : -rawYPt;
   return `edge from parent node[pos=0.5,sloped=false,anchor=${dir.anchor},xshift=${xPt}pt,yshift=${yPt}pt] {$${edge.label}$}`;
 }
 
