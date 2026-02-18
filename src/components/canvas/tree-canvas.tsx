@@ -350,9 +350,10 @@ export const TreeCanvas = forwardRef<TreeCanvasRef>(function TreeCanvas(_, ref) 
           ? (HORIZONTAL_POSITION_MAP[edge.labelPosition] || edge.labelPosition)
           : edge.labelPosition;
 
-        // Apply separate X and Y offset for edge labels (always map directly to visual axes)
+        // Apply separate X and Y offset for edge labels
         const labelOffsetX = edge.labelOffsetX ?? 0;
-        const labelOffsetY = edge.labelOffsetY ?? 0;
+        // In horizontal mode, negate Y so positive = up (math coords) instead of down (SVG coords)
+        const labelOffsetY = isHorizontal ? -(edge.labelOffsetY ?? 0) : (edge.labelOffsetY ?? 0);
 
         // Map edge label position to LatexLabel anchor position
         const labelAnchor = edgeLabelPos;
