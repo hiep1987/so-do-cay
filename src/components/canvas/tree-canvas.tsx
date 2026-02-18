@@ -364,6 +364,7 @@ export const TreeCanvas = forwardRef<TreeCanvasRef>(function TreeCanvas(_, ref) 
             x={midX + labelOffsetX}
             y={midY + labelOffsetY}
             position={labelAnchor as 'above' | 'below' | 'left' | 'right'}
+            labelOffset={10}
             viewX={view.x}
             viewY={view.y}
             scale={view.scale}
