@@ -350,7 +350,7 @@ export const TreeCanvas = forwardRef<TreeCanvasRef>(function TreeCanvas(_, ref) 
           ? (HORIZONTAL_POSITION_MAP[edge.labelPosition] || edge.labelPosition)
           : edge.labelPosition;
 
-        // Apply separate X and Y offset for edge labels
+        // Apply separate X and Y offset for edge labels (always map directly to visual axes)
         const labelOffsetX = edge.labelOffsetX ?? 0;
         const labelOffsetY = edge.labelOffsetY ?? 0;
 
