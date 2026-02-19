@@ -117,6 +117,15 @@ export const TreeCanvas = forwardRef<TreeCanvasRef>(function TreeCanvas(_, ref) 
     setHasInitializedView(true);
   }, [positions, hasInitializedView, centerTree]);
 
+  // Auto-center tree when switching between horizontal/vertical layout
+  const prevDirectionRef = useRef(settings.direction);
+  useEffect(() => {
+    if (prevDirectionRef.current !== settings.direction) {
+      prevDirectionRef.current = settings.direction;
+      centerTree();
+    }
+  }, [settings.direction, centerTree]);
+
   // Detect touch device for showing appropriate control hints
   useEffect(() => {
     const mq = window.matchMedia('(pointer: coarse)');
