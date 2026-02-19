@@ -4,6 +4,7 @@
 
 import { useTreeStore } from '@/hooks/use-tree-store';
 import { PRESET_COLORS } from '@/constants/colors';
+import { LatexAutocomplete, NODE_SUGGESTIONS, EDGE_SUGGESTIONS } from './latex-autocomplete-suggestions';
 
 const NODE_LABEL_POSITIONS = ['above', 'below', 'left', 'right', 'center'] as const;
 const EDGE_LABEL_POSITIONS = ['left', 'right', 'above', 'below'] as const;
@@ -69,23 +70,14 @@ export function PropertyPanel() {
           </a>
         </div>
 
-        {/* Label input */}
-        <div className="mb-4">
-          <label className="block text-xs font-mono text-text-muted mb-1.5">
-            label <span className="text-text-muted">(LaTeX)</span>
-          </label>
-          <input
-            type="text"
-            value={selectedNode.label}
-            onChange={(e) => updateNode(selectedNode.id, { label: e.target.value })}
-            placeholder="e.g., A or \overline{B}"
-            className="w-full px-3 py-2 text-sm font-mono
-              bg-surface-elevated border border-border rounded-md
-              text-text-primary placeholder:text-text-muted
-              focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
-              transition-colors duration-150"
-          />
-        </div>
+        {/* Label input with LaTeX autocomplete */}
+        <LatexAutocomplete
+          suggestions={NODE_SUGGESTIONS}
+          value={selectedNode.label}
+          onChange={(val) => updateNode(selectedNode.id, { label: val })}
+          placeholder="e.g., A or \overline{B}"
+          label={<>label <span className="text-text-muted">(LaTeX)</span></>}
+        />
 
         {/* Label position */}
         <div className="mb-4">
@@ -187,23 +179,14 @@ export function PropertyPanel() {
           </a>
         </div>
 
-        {/* Label input */}
-        <div className="mb-4">
-          <label className="block text-xs font-mono text-text-muted mb-1.5">
-            label <span className="text-text-muted">(probability)</span>
-          </label>
-          <input
-            type="text"
-            value={selectedEdge.label}
-            onChange={(e) => updateEdge(selectedEdge.id, { label: e.target.value })}
-            placeholder="e.g., 0.6 or P(A)"
-            className="w-full px-3 py-2 text-sm font-mono
-              bg-surface-elevated border border-border rounded-md
-              text-text-primary placeholder:text-text-muted
-              focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
-              transition-colors duration-150"
-          />
-        </div>
+        {/* Label input with LaTeX autocomplete */}
+        <LatexAutocomplete
+          suggestions={EDGE_SUGGESTIONS}
+          value={selectedEdge.label}
+          onChange={(val) => updateEdge(selectedEdge.id, { label: val })}
+          placeholder="e.g., 0.6 or P(A)"
+          label={<>label <span className="text-text-muted">(probability)</span></>}
+        />
 
         {/* Label position */}
         <div className="mb-4">
