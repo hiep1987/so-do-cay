@@ -361,11 +361,11 @@ export const TreeCanvas = forwardRef<TreeCanvasRef>(function TreeCanvas(_, ref) 
 
         // Apply separate X and Y offset for edge labels
         const labelOffsetX = edge.labelOffsetX ?? 0;
-        // In horizontal mode, negate Y so positive = up (math coords) instead of down (SVG coords)
-        // Also apply 5px correction to push above/below labels further from midpoint to match TikZ
+        // Negate Y so positive = up (math coords) instead of down (SVG coords)
+        // In horizontal mode, also apply 5px correction to push above/below labels further from midpoint to match TikZ
         const rawOffsetY = edge.labelOffsetY ?? 0;
         const hCorrection = edgeLabelPos === 'above' ? -5 : edgeLabelPos === 'below' ? 5 : 0;
-        const labelOffsetY = isHorizontal ? -(rawOffsetY) + hCorrection : rawOffsetY;
+        const labelOffsetY = -(rawOffsetY) + (isHorizontal ? hCorrection : 0);
 
         // Map edge label position to LatexLabel anchor position
         const labelAnchor = edgeLabelPos;
