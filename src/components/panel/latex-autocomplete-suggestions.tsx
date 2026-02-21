@@ -26,6 +26,7 @@ export const EDGE_SUGGESTIONS: LatexSuggestion[] = [
 ];
 
 export const NODE_SUGGESTIONS: LatexSuggestion[] = [
+  { display: '\\text{}', template: '\\text{}', cursorOffsetFromEnd: 1 },
   { display: '\\overline{}', template: '\\overline{}', cursorOffsetFromEnd: 1 },
 ];
 
