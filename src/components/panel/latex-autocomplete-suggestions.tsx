@@ -90,7 +90,7 @@ export function LatexAutocomplete({
         onChange={(e) => onChange(e.target.value)}
         onFocus={() => setShowSuggestions(true)}
         placeholder={placeholder}
-        className="w-full px-3 py-2 text-sm font-mono
+        className="w-full px-3 py-2 text-sm
           bg-surface-elevated border border-border rounded-md
           text-text-primary placeholder:text-text-muted
           focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
