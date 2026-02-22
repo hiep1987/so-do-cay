@@ -162,8 +162,13 @@ function generateNode(
   let result: string;
   if (isCenterLabel && node.label) {
     // Center label: node rendered as white-filled rectangle with label text
-    const labelContent = (node.label.startsWith('$') && node.label.endsWith('$')) ? node.label : `$${node.label}$`;
-    result = `${nodeIndent}${nodeCmd}[fill=white,rectangle,inner sep=1pt] {${labelContent}}`;
+    // \text{...} labels use text mode with align=center; others use math mode $...$
+    const isTextMode = /\\text\s*\{/.test(node.label);
+    const alignAttr = isTextMode ? ',align=center' : '';
+    const labelContent = isTextMode
+      ? node.label.replace(/\\text\s*\{(.*)\}/, '$1')
+      : (node.label.startsWith('$') && node.label.endsWith('$')) ? node.label : `$${node.label}$`;
+    result = `${nodeIndent}${nodeCmd}[fill=white,rectangle,inner sep=1pt${alignAttr}] {${labelContent}}`;
   } else {
     result = `${nodeIndent}${nodeCmd}[dot=${color}${label}] {}`;
   }
