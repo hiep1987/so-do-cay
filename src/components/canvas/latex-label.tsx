@@ -112,7 +112,7 @@ export function LatexLabel({ text, x, y, position = 'above', labelOffset, viewX 
             ...(position === 'center' ? {
               backgroundColor: 'white',
               color: '#000000',
-              padding: '1px 3px',
+              padding: `${1 * scale}px ${3 * scale}px`,
               width: 'fit-content',
               margin: '0 auto',
             } : {}),

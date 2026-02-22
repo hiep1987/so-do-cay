@@ -171,19 +171,26 @@ export const useTreeStore = create<TreeStore>((set, get) => ({
       const newSettings = { ...state.settings, ...updates };
       // When direction changes, adjust root edge labelOffset defaults
       if (updates.direction && updates.direction !== state.settings.direction) {
+        // Rotate label positions 90° when direction toggles
+        const rotatePos = (pos: string) => {
+          const map: Record<string, string> = { left: 'above', right: 'below', above: 'left', below: 'right' };
+          return map[pos] || pos;
+        };
         const rootIds = new Set(state.nodes.filter((n) => n.parentId === null).map((n) => n.id));
         const newEdges = state.edges.map((e) => {
-          if (!rootIds.has(e.sourceId)) return e;
+          const lp = rotatePos(e.labelPosition) as typeof e.labelPosition;
+          if (!rootIds.has(e.sourceId)) return { ...e, labelPosition: lp };
           // Set -10px for horizontal, 0px for vertical on root edges
           const newOffset = updates.direction === 'horizontal' ? -10 : 0;
-          return { ...e, labelOffsetX: newOffset };
+          return { ...e, labelPosition: lp, labelOffsetX: newOffset };
         });
-        // Update node labelOffset defaults: 20px vertical, 15px horizontal
+        // Update node labelOffset defaults when direction changes
         const defaultOffset = updates.direction === 'vertical' ? 20 : 15;
         const newNodes = state.nodes.map((n) => {
           const currentDefault = state.settings.direction === 'vertical' ? 20 : 15;
-          if (n.labelOffset === currentDefault) return { ...n, labelOffset: defaultOffset };
-          return n;
+          const lp = rotatePos(n.labelPosition) as typeof n.labelPosition;
+          const newOffset = n.labelOffset === currentDefault ? defaultOffset : n.labelOffset;
+          return { ...n, labelPosition: lp, labelOffset: newOffset };
         });
         return { settings: newSettings, edges: newEdges, nodes: newNodes };
       }

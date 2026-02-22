@@ -9,14 +9,6 @@ import { TreeNodeComponent } from './tree-node';
 import { TreeEdgeComponent } from './tree-edge';
 import { LatexLabel } from './latex-label';
 
-// Rotate label positions 90° clockwise for horizontal layout (matches TikZ generator)
-const HORIZONTAL_POSITION_MAP: Record<string, string> = {
-  left: 'above',
-  right: 'below',
-  above: 'left',
-  below: 'right',
-};
-
 interface ViewState {
   x: number;
   y: number;
@@ -310,14 +302,28 @@ export const TreeCanvas = forwardRef<TreeCanvasRef>(function TreeCanvas(_, ref) 
           const targetPos = positions.get(edge.targetId);
           if (!sourcePos || !targetPos) return null;
 
+          // For center-label nodes, offset edge endpoints to rectangle border
+          // so edges converge to a single point (matching TikZ anchor behavior)
+          const sourceNode = nodes.find((n) => n.id === edge.sourceId);
+          const targetNode = nodes.find((n) => n.id === edge.targetId);
+          const isHoriz = settings.direction === 'horizontal';
+          let x1 = sourcePos.x, y1 = sourcePos.y, x2 = targetPos.x, y2 = targetPos.y;
+          // foreignObject is 30px tall centered on node (y-15 to y+15)
+          if (sourceNode?.labelPosition === 'center') {
+            if (isHoriz) x1 += 15; else y1 += 15;
+          }
+          if (targetNode?.labelPosition === 'center') {
+            if (isHoriz) x2 -= 15; else y2 -= 15;
+          }
+
           return (
             <TreeEdgeComponent
               key={edge.id}
               edge={edge}
-              x1={sourcePos.x}
-              y1={sourcePos.y}
-              x2={targetPos.x}
-              y2={targetPos.y}
+              x1={x1}
+              y1={y1}
+              x2={x2}
+              y2={y2}
               isSelected={selectedId === edge.id}
               onClick={() => handleEdgeClick(edge.id)}
             />
@@ -353,11 +359,9 @@ export const TreeCanvas = forwardRef<TreeCanvasRef>(function TreeCanvas(_, ref) 
 
         const midX = (sourcePos.x + targetPos.x) / 2;
         const midY = (sourcePos.y + targetPos.y) / 2;
-        // Rotate edge label position for horizontal layout
-        const isHorizontal = settings.direction === 'horizontal';
-        const edgeLabelPos = isHorizontal
-          ? (HORIZONTAL_POSITION_MAP[edge.labelPosition] || edge.labelPosition)
-          : edge.labelPosition;
+        // Edge label positions are already rotated in store when direction changes
+        const edgeLabelPos = edge.labelPosition;
+        const isHoriz = settings.direction === 'horizontal';
 
         // Apply separate X and Y offset for edge labels
         const labelOffsetX = edge.labelOffsetX ?? 0;
@@ -365,7 +369,7 @@ export const TreeCanvas = forwardRef<TreeCanvasRef>(function TreeCanvas(_, ref) 
         // In horizontal mode, also apply 5px correction to push above/below labels further from midpoint to match TikZ
         const rawOffsetY = edge.labelOffsetY ?? 0;
         const hCorrection = edgeLabelPos === 'above' ? -5 : edgeLabelPos === 'below' ? 5 : 0;
-        const labelOffsetY = -(rawOffsetY) + (isHorizontal ? hCorrection : 0);
+        const labelOffsetY = -(rawOffsetY) + (isHoriz ? hCorrection : 0);
 
         // Map edge label position to LatexLabel anchor position
         const labelAnchor = edgeLabelPos;
@@ -390,13 +394,8 @@ export const TreeCanvas = forwardRef<TreeCanvasRef>(function TreeCanvas(_, ref) 
         const pos = positions.get(node.id);
         if (!pos || !node.label) return null;
 
-        // Rotate node label position for horizontal layout (center stays center)
-        const isHorizontal = settings.direction === 'horizontal';
-        const nodeLabelPos = node.labelPosition === 'center'
-          ? 'center'
-          : isHorizontal
-            ? (HORIZONTAL_POSITION_MAP[node.labelPosition] || node.labelPosition)
-            : node.labelPosition;
+        // Label positions are already rotated in store when direction changes
+        const nodeLabelPos = node.labelPosition;
 
         return (
           <LatexLabel

@@ -3,15 +3,6 @@
 
 import { TreeNode, TreeEdge, TreeSettings, TreeDiagram } from '@/types/tree';
 
-// Rotate label positions 90° clockwise for horizontal layout
-// vertical→horizontal: left→above, right→below, above→left, below→right
-const HORIZONTAL_POSITION_MAP: Record<string, string> = {
-  left: 'above',
-  right: 'below',
-  above: 'left',
-  below: 'right',
-};
-
 // Color mapping from app colors to TikZ color modifiers
 const COLOR_MAP: Record<string, string> = {
   orange: 'orange!80',
@@ -80,11 +71,10 @@ function generateStyles(settings: TreeSettings, maxDepth: number): string {
 
 // Format node label for TikZ with position
 // Users input LaTeX directly (e.g., \text{Gốc } O, \overline{A})
-function formatLabel(label: string, position: string, labelOffset?: number, isHorizontal?: boolean): string {
+function formatLabel(label: string, position: string, labelOffset?: number): string {
   if (!label) return '';
 
-  // Rotate position for horizontal layout
-  const pos = isHorizontal ? (HORIZONTAL_POSITION_MAP[position] || position) : position;
+  const pos = position;
 
   const distPt = Math.round((labelOffset ?? 20) / 3);
   // above: yshift>0, below: yshift<0, left: xshift<0, right: xshift>0
@@ -107,10 +97,9 @@ const EDGE_LABEL_DIRS: Record<string, { dx: number; dy: number; anchor: string }
 // Generate edge label markup matching canvas positioning exactly
 // Canvas computes: position = midpoint + (labelOffsetX, labelOffsetY) + direction*15px
 // TikZ: use sloped=false so xshift/yshift are absolute (not path-relative)
-function generateEdgeLabel(edge: TreeEdge, isHorizontal?: boolean): string {
+function generateEdgeLabel(edge: TreeEdge): string {
   if (!edge.label) return '';
-  // Rotate label position for horizontal layout
-  const pos = isHorizontal ? (HORIZONTAL_POSITION_MAP[edge.labelPosition] || edge.labelPosition) : edge.labelPosition;
+  const pos = edge.labelPosition;
   const dir = EDGE_LABEL_DIRS[pos] || EDGE_LABEL_DIRS.left;
   // Convert px offsets to pt (calibrated: 1pt ≈ 1.667px, so px * 0.6 ≈ pt)
   // Note: direction offset (15px) is NOT added here because TikZ anchor already handles
@@ -148,7 +137,7 @@ function generateNode(
 
   let label = '';
   if (!isCenterLabel) {
-    label = formatLabel(node.label, node.labelPosition, node.labelOffset, isHorizontal);
+    label = formatLabel(node.label, node.labelPosition, node.labelOffset);
   }
 
   // TikZ vertical: renders children left-to-right (same as visual order, no reverse needed)
@@ -179,7 +168,7 @@ function generateNode(
       const edge = edgeMap.get(child.id);
       // Child nodes are rendered at depth+2 (inside child { } block)
       const childStr = generateNode(child, allNodes, edgeMap, depth + 2, false, isHorizontal);
-      const edgeLabel = edge ? generateEdgeLabel(edge, isHorizontal) : '';
+      const edgeLabel = edge ? generateEdgeLabel(edge) : '';
 
       // Format matching reference:
       //     child {
