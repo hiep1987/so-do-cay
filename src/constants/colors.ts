@@ -6,6 +6,7 @@ export const PRESET_COLORS = [
   { name: 'green', hex: '#22c55e' },
   { name: 'pink', hex: '#ec4899' },
   { name: 'violet', hex: '#8b5cf6' },
+  { name: 'black', hex: '#374151' },
 ] as const;
 
 export type PresetColorName = (typeof PRESET_COLORS)[number]['name'];

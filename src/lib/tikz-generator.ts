@@ -23,6 +23,7 @@ const COLOR_MAP: Record<string, string> = {
   blue: 'blue!60',
   yellow: 'yellow!80',
   gray: 'gray!60',
+  black: 'black',
 };
 
 // Convert pixels to cm (approximate ratio for TikZ)
