@@ -46,7 +46,8 @@ export function Toolbar({ onResetView }: ToolbarProps) {
   return (
     <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-surface overflow-x-auto">
       {/* Logo / App name */}
-      <img src="/icon.svg" alt="logo" className="w-15 h-15 shrink-0" />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/icon.svg`} alt="logo" className="w-15 h-15 shrink-0" />
       <span className="text-sm font-mono font-semibold text-text-secondary mr-2 shrink-0">
         tree-builder
       </span>

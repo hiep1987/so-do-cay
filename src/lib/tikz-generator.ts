@@ -70,7 +70,11 @@ function generateStyles(settings: TreeSettings, maxDepth: number): string {
     );
   }
 
-  lines.push(`    edge from parent/.style={draw, thick, black}`);
+  // Anchor direction depends on tree orientation
+  const anchors = settings.direction === 'horizontal'
+    ? 'parent anchor=east, child anchor=west'
+    : 'parent anchor=south, child anchor=north';
+  lines.push(`    edge from parent/.style={draw, thick, black, ${anchors}}`);
   return lines.join(',\n');
 }
 
