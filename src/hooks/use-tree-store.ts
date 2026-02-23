@@ -68,7 +68,8 @@ export const useTreeStore = create<TreeStore>((set, get) => ({
         id: newNodeId,
         parentId,
         label: parentId ? 'New' : '',
-        labelPosition: 'below',
+        // Default label positions: vertical=below, horizontal=right
+        labelPosition: isVertical ? 'below' : 'right',
         labelOffset: isVertical ? 20 : 15,
         color: 'orange',
       };
@@ -84,7 +85,8 @@ export const useTreeStore = create<TreeStore>((set, get) => ({
           sourceId: parentId,
           targetId: newNodeId,
           label: '',
-          labelPosition: 'left',
+          // Default edge label positions: vertical=left, horizontal=above
+          labelPosition: isHorizontal ? 'above' : 'left',
           labelOffsetX: isHorizontal && isFromRoot ? -10 : 0,
           labelOffsetY: 0,
         };

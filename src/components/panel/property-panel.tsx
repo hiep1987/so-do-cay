@@ -9,9 +9,6 @@ import { LatexAutocomplete, NODE_SUGGESTIONS, EDGE_SUGGESTIONS } from './latex-a
 const NODE_LABEL_POSITIONS = ['above', 'below', 'left', 'right', 'center'] as const;
 const EDGE_LABEL_POSITIONS = ['left', 'right', 'above', 'below'] as const;
 
-// Rotate label positions 90° for horizontal layout (matches canvas/tikz rendering)
-const H_MAP: Record<string, string> = { left: 'above', right: 'below', above: 'left', below: 'right' };
-const H_MAP_INV: Record<string, string> = { above: 'left', below: 'right', left: 'above', right: 'below' };
 
 export function PropertyPanel() {
   const {
@@ -22,7 +19,6 @@ export function PropertyPanel() {
     updateNode,
     updateEdge,
     addNode,
-    settings,
   } = useTreeStore();
 
   const selectedNode = getSelectedNode();
@@ -194,11 +190,9 @@ export function PropertyPanel() {
             labelPosition
           </label>
           <select
-            value={settings.direction === 'horizontal' ? (H_MAP[selectedEdge.labelPosition] || selectedEdge.labelPosition) : selectedEdge.labelPosition}
+            value={selectedEdge.labelPosition}
             onChange={(e) => {
-              // In horizontal mode, inverse-rotate the selected value back to stored format
-              const val = settings.direction === 'horizontal' ? (H_MAP_INV[e.target.value] || e.target.value) : e.target.value;
-              updateEdge(selectedEdge.id, { labelPosition: val as typeof selectedEdge.labelPosition });
+              updateEdge(selectedEdge.id, { labelPosition: e.target.value as typeof selectedEdge.labelPosition });
             }}
             className="w-full px-3 py-2 text-sm font-mono
               bg-surface-elevated border border-border rounded-md
