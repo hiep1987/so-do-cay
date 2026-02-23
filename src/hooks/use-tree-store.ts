@@ -181,7 +181,11 @@ export const useTreeStore = create<TreeStore>((set, get) => ({
         const rootIds = new Set(state.nodes.filter((n) => n.parentId === null).map((n) => n.id));
         const newEdges = state.edges.map((e) => {
           const lp = rotatePos(e.labelPosition) as typeof e.labelPosition;
-          if (!rootIds.has(e.sourceId)) return { ...e, labelPosition: lp };
+          if (!rootIds.has(e.sourceId)) {
+            // In horizontal mode, 'below' edge labels need -5px Y offset for alignment
+            const yOff = updates.direction === 'horizontal' && lp === 'below' ? -5 : 0;
+            return { ...e, labelPosition: lp, labelOffsetY: yOff };
+          }
           // Set -10px for horizontal, 0px for vertical on root edges
           const newOffset = updates.direction === 'horizontal' ? -10 : 0;
           return { ...e, labelPosition: lp, labelOffsetX: newOffset };
