@@ -396,13 +396,16 @@ export const TreeCanvas = forwardRef<TreeCanvasRef>(function TreeCanvas(_, ref) 
 
         // Label positions are already rotated in store when direction changes
         const nodeLabelPos = node.labelPosition;
+        // In horizontal mode, nudge 'below' labels down 5px for better alignment with TikZ
+        const isHoriz = settings.direction === 'horizontal';
+        const nodeYAdjust = isHoriz && nodeLabelPos === 'below' ? 5 : 0;
 
         return (
           <LatexLabel
             key={`label-${node.id}`}
             text={node.label}
             x={pos.x}
-            y={pos.y}
+            y={pos.y + nodeYAdjust}
             position={nodeLabelPos as 'above' | 'below' | 'left' | 'right' | 'center'}
             labelOffset={node.labelOffset}
             viewX={view.x}
