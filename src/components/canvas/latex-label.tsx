@@ -63,29 +63,33 @@ export function LatexLabel({ text, x, y, position = 'above', labelOffset, viewX 
   const transformedX = x * scale + viewX;
   const transformedY = y * scale + viewY;
 
+  // Position-specific nudge to add clearance from node border
+  const nudge = position === 'below' ? 5 : position === 'left' ? -5 : position === 'right' ? 5 : 0;
+
   // Calculate foreignObject position based on anchor
   const foWidth = position === 'center' ? 200 : 80;
-  const foX = offset.anchor === 'end' ? transformedX + offset.dx * scale - 80
-            : offset.anchor === 'start' ? transformedX + offset.dx * scale
+  const foX = offset.anchor === 'end' ? transformedX + (offset.dx + nudge) * scale - 80
+            : offset.anchor === 'start' ? transformedX + (offset.dx + nudge) * scale
             : transformedX + offset.dx * scale - (foWidth / 2);
   // For left/right positions, center label vertically relative to node
   // For center position, use larger foreignObject to fit multiline content
   const foHeight = position === 'center' ? 200 : 30;
+  const belowNudge = position === 'below' ? 5 * scale : 0;
   const foY = (position === 'left' || position === 'right' || position === 'center')
             ? transformedY - (foHeight / 2) * scale
-            : transformedY + offset.dy * scale - 10;
+            : transformedY + offset.dy * scale - 10 + belowNudge;
 
   // Scale font size with zoom
   const fontSize = 14 * scale;
 
   // Store original content position for export (before transform applied)
   // Export will use these to recalculate position with scale=1, viewX=0, viewY=0
-  const contentFoX = offset.anchor === 'end' ? x + offset.dx - 80
-                   : offset.anchor === 'start' ? x + offset.dx
+  const contentFoX = offset.anchor === 'end' ? x + (offset.dx + nudge) - 80
+                   : offset.anchor === 'start' ? x + (offset.dx + nudge)
                    : x + offset.dx - (foWidth / 2);
   const contentFoY = (position === 'left' || position === 'right' || position === 'center')
                    ? y - foHeight / 2
-                   : y + offset.dy - 10;
+                   : y + offset.dy - 10 + (position === 'below' ? 5 : 0);
 
   return (
     <foreignObject

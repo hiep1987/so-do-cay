@@ -343,7 +343,9 @@ export const TreeCanvas = forwardRef<TreeCanvasRef>(function TreeCanvas(_, ref) 
           const targetNode = nodes.find((n) => n.id === edge.targetId);
           const isHoriz = settings.direction === 'horizontal';
           let x1 = sourcePos.x, y1 = sourcePos.y, x2 = targetPos.x, y2 = targetPos.y;
-          // Offset edges to center-label border so they converge at a single point
+          // Fixed anchors for center-label nodes (matching TikZ):
+          // horizontal: source→east, target→west
+          // vertical: source→south, target→north
           if (sourceNode?.labelPosition === 'center') {
             const d = centerLabelDims.get(sourceNode.id) ?? { w: 30, h: 30 };
             if (isHoriz) x1 += d.w / 2; else y1 += d.h / 2;
@@ -395,11 +397,23 @@ export const TreeCanvas = forwardRef<TreeCanvasRef>(function TreeCanvas(_, ref) 
         const targetPos = positions.get(edge.targetId);
         if (!sourcePos || !targetPos || !edge.label) return null;
 
-        const midX = (sourcePos.x + targetPos.x) / 2;
-        const midY = (sourcePos.y + targetPos.y) / 2;
+        // Use adjusted edge endpoints (matching center-label offsets) for label midpoint
+        const sourceNode = nodes.find((n) => n.id === edge.sourceId);
+        const targetNode = nodes.find((n) => n.id === edge.targetId);
+        const isHoriz = settings.direction === 'horizontal';
+        let ex1 = sourcePos.x, ey1 = sourcePos.y, ex2 = targetPos.x, ey2 = targetPos.y;
+        if (sourceNode?.labelPosition === 'center') {
+          const d = centerLabelDims.get(sourceNode.id) ?? { w: 30, h: 30 };
+          if (isHoriz) ex1 += d.w / 2; else ey1 += d.h / 2;
+        }
+        if (targetNode?.labelPosition === 'center') {
+          const d = centerLabelDims.get(targetNode.id) ?? { w: 30, h: 30 };
+          if (isHoriz) ex2 -= d.w / 2; else ey2 -= d.h / 2;
+        }
+        const midX = (ex1 + ex2) / 2;
+        const midY = (ey1 + ey2) / 2;
         // Edge label positions are already rotated in store when direction changes
         const edgeLabelPos = edge.labelPosition;
-        const isHoriz = settings.direction === 'horizontal';
 
         // Apply separate X and Y offset for edge labels
         const labelOffsetX = edge.labelOffsetX ?? 0;
