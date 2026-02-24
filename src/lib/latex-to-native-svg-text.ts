@@ -109,10 +109,55 @@ function getTextAnchor(labelPosition: string): string {
   return 'middle';
 }
 
+/** Render multiline \text{ABC\\D} as stacked SVG text lines */
+function createMultilineSvgLabel(
+  doc: Document, lines: string[], cx: number, cy: number, labelPosition: string
+): SVGElement {
+  const anchor = getTextAnchor(labelPosition);
+  const lineHeight = 18;
+  const totalHeight = lines.length * lineHeight;
+  const startY = cy - totalHeight / 2 + lineHeight / 2;
+  const maxWidth = Math.max(...lines.map(l => l.length * CHAR_WIDTH));
+
+  const g = doc.createElementNS(NS, 'g');
+
+  if (labelPosition === 'center') {
+    const bg = doc.createElementNS(NS, 'rect');
+    bg.setAttribute('x', String(cx - maxWidth / 2 - 4));
+    bg.setAttribute('y', String(cy - totalHeight / 2 - 3));
+    bg.setAttribute('width', String(maxWidth + 8));
+    bg.setAttribute('height', String(totalHeight + 6));
+    bg.setAttribute('fill', 'white');
+    g.appendChild(bg);
+  }
+
+  for (let i = 0; i < lines.length; i++) {
+    // \text{} content renders upright (not italic)
+    const style = "font-family: 'Times New Roman', Times, serif; font-size: 14px;";
+    const t = doc.createElementNS(NS, 'text') as SVGTextElement;
+    t.setAttribute('x', String(cx));
+    t.setAttribute('y', String(startY + i * lineHeight));
+    t.setAttribute('dominant-baseline', 'central');
+    t.setAttribute('text-anchor', anchor);
+    t.setAttribute('style', style);
+    t.textContent = lines[i];
+    g.appendChild(t);
+  }
+
+  return g;
+}
+
 /** Build native SVG element(s) from LaTeX at anchor position (cx, cy) */
 export function createSvgLabelElement(
   doc: Document, latex: string, cx: number, cy: number, labelPosition: string
 ): SVGElement {
+  // Handle multiline \text{ABC\\D} → stacked lines (matching KaTeX canvas render)
+  const textMatch = latex.match(/^\\text\s*\{(.+)\}$/);
+  if (textMatch && textMatch[1].includes('\\\\')) {
+    const lines = textMatch[1].split('\\\\').map(l => l.trim());
+    return createMultilineSvgLabel(doc, lines, cx, cy, labelPosition);
+  }
+
   const tokens = parseLatex(latex);
   const anchor = getTextAnchor(labelPosition);
 

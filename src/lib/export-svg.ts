@@ -49,14 +49,18 @@ export function exportSvg(svgElement: SVGSVGElement, filename = 'tree-diagram.sv
     const labelPosition = fo.getAttribute('data-label-position') || '';
 
     if (originalText) {
+      // Center labels use 200x200 foreignObject; others use 80x30
+      const isCenter = labelPosition === 'center';
+      const foW = isCenter ? 200 : 80;
+      const foH = isCenter ? 200 : 30;
       // Match text anchor point to the flexbox alignment used in the live canvas
       const cx = textAlign === 'right' ? contentX + 80
                : textAlign === 'left' ? contentX
-               : contentX + 40;
-      // Vertical: left/right/center use align-items:center (mid of 30px height)
+               : contentX + foW / 2;
+      // Vertical: left/right/center use align-items:center (mid of foHeight)
       // above/below use align-items:flex-start (top ~5px into 30px height)
-      const cy = (labelPosition === 'left' || labelPosition === 'right' || labelPosition === 'center')
-               ? contentY + 15
+      const cy = (labelPosition === 'left' || labelPosition === 'right' || isCenter)
+               ? contentY + foH / 2
                : contentY + 5;
       const svgLabel = createSvgLabelElement(doc, originalText, cx, cy, labelPosition);
       clone.appendChild(svgLabel);

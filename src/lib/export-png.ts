@@ -59,14 +59,18 @@ function prepareExportSvg(svgElement: SVGSVGElement) {
     const labelPosition = fo.getAttribute('data-label-position') || '';
 
     if (originalText) {
+      // Center labels use 200x200 foreignObject; others use 80x30
+      const isCenter = labelPosition === 'center';
+      const foW = isCenter ? 200 : 80;
+      const foH = isCenter ? 200 : 30;
       // Calculate anchor point matching the foreignObject layout
       const cx = textAlign === 'right' ? contentX + 80
                : textAlign === 'left' ? contentX
-               : contentX + 40;
-      // Vertical: left/right/center labels are vertically centered (mid of 30px height)
+               : contentX + foW / 2;
+      // Vertical: left/right/center labels are vertically centered (mid of foHeight)
       // above/below labels align to top (~5px into 30px height)
-      const cy = (labelPosition === 'left' || labelPosition === 'right' || labelPosition === 'center')
-               ? contentY + 15
+      const cy = (labelPosition === 'left' || labelPosition === 'right' || isCenter)
+               ? contentY + foH / 2
                : contentY + 5;
       const svgLabel = createSvgLabelElement(document, originalText, cx, cy, labelPosition);
       clone.appendChild(svgLabel);
