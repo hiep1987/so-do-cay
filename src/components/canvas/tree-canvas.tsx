@@ -2,7 +2,8 @@
 
 // SVG canvas component with pan/zoom and tree rendering - dark mode developer tool aesthetic
 
-import { useRef, useState, useCallback, useEffect, forwardRef, useImperativeHandle, type MouseEvent, type WheelEvent, type TouchEvent } from 'react';
+import { useRef, useState, useCallback, useEffect, useMemo, forwardRef, useImperativeHandle, type MouseEvent, type WheelEvent, type TouchEvent } from 'react';
+import katex from 'katex';
 import { useTreeStore } from '@/hooks/use-tree-store';
 import { useTreeLayout } from '@/hooks/use-tree-layout';
 import { TreeNodeComponent } from './tree-node';
@@ -56,6 +57,33 @@ export const TreeCanvas = forwardRef<TreeCanvasRef>(function TreeCanvas(_, ref) 
   // Store state
   const { nodes, edges, settings, selectedId, setSelected, setDiagram, addNode, isPreviewMode } = useTreeStore();
   const positions = useTreeLayout();
+
+  // Measure rendered widths of center-position labels for accurate edge anchoring
+  // Only recalculates when center label text changes
+  const centerLabelKey = nodes
+    .filter(n => n.labelPosition === 'center')
+    .map(n => `${n.id}:${n.label}`)
+    .join(',');
+  const centerLabelWidths = useMemo(() => {
+    const widths = new Map<string, number>();
+    if (typeof document === 'undefined') return widths;
+    const el = document.createElement('div');
+    el.style.cssText = 'position:fixed;visibility:hidden;white-space:nowrap;font-size:14px;padding:1px 3px;';
+    document.body.appendChild(el);
+    for (const node of nodes) {
+      if (node.labelPosition === 'center' && node.label) {
+        try {
+          el.innerHTML = katex.renderToString(node.label, { throwOnError: false, displayMode: false });
+          widths.set(node.id, el.getBoundingClientRect().width);
+        } catch {
+          widths.set(node.id, 30);
+        }
+      }
+    }
+    document.body.removeChild(el);
+    return widths;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [centerLabelKey]);
 
   // Center tree in canvas at scale 1 (reusable for initial load and reset)
   const centerTree = useCallback(() => {
@@ -308,12 +336,20 @@ export const TreeCanvas = forwardRef<TreeCanvasRef>(function TreeCanvas(_, ref) 
           const targetNode = nodes.find((n) => n.id === edge.targetId);
           const isHoriz = settings.direction === 'horizontal';
           let x1 = sourcePos.x, y1 = sourcePos.y, x2 = targetPos.x, y2 = targetPos.y;
-          // foreignObject is 30px tall centered on node (y-15 to y+15)
+          // Offset edges to center-label border so they converge at a single point
           if (sourceNode?.labelPosition === 'center') {
-            if (isHoriz) x1 += 15; else y1 += 15;
+            if (isHoriz) {
+              x1 += (centerLabelWidths.get(sourceNode.id) ?? 30) / 2;
+            } else {
+              y1 += 15;
+            }
           }
           if (targetNode?.labelPosition === 'center') {
-            if (isHoriz) x2 -= 15; else y2 -= 15;
+            if (isHoriz) {
+              x2 -= (centerLabelWidths.get(targetNode.id) ?? 30) / 2;
+            } else {
+              y2 -= 15;
+            }
           }
 
           return (
