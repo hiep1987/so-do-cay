@@ -381,6 +381,7 @@ export const TreeCanvas = forwardRef<TreeCanvasRef>(function TreeCanvas(_, ref) 
               isSelected={selectedId === node.id}
               onClick={() => handleNodeClick(node.id)}
               onDoubleClick={() => handleNodeDoubleClick(node.id)}
+              centerLabelWidth={centerLabelWidths.get(node.id)}
             />
           );
         })}
