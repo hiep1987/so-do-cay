@@ -16,8 +16,8 @@ interface TreeNodeComponentProps {
   isSelected: boolean;
   onClick: () => void;
   onDoubleClick?: () => void;
-  /** Measured width of center-position label for click hit area */
-  centerLabelWidth?: number;
+  /** Measured dimensions of center-position label for click hit area */
+  centerLabelDims?: { w: number; h: number };
 }
 
 export function TreeNodeComponent({
@@ -28,7 +28,7 @@ export function TreeNodeComponent({
   isSelected,
   onClick,
   onDoubleClick,
-  centerLabelWidth,
+  centerLabelDims,
 }: TreeNodeComponentProps) {
   const fillColor = getColorHex(node.color);
 
@@ -44,8 +44,8 @@ export function TreeNodeComponent({
 
   // When labelPosition is 'center', use a rectangle hit area matching the visible label
   if (node.labelPosition === 'center') {
-    const w = centerLabelWidth ?? 30;
-    const h = 30; // foreignObject height
+    const w = centerLabelDims?.w ?? 30;
+    const h = centerLabelDims?.h ?? 30;
     return (
       <g onClick={handleClick} onDoubleClick={handleDoubleClick} style={{ cursor: 'pointer' }}>
         <rect

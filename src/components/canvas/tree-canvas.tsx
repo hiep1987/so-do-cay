@@ -58,30 +58,37 @@ export const TreeCanvas = forwardRef<TreeCanvasRef>(function TreeCanvas(_, ref) 
   const { nodes, edges, settings, selectedId, setSelected, setDiagram, addNode, isPreviewMode } = useTreeStore();
   const positions = useTreeLayout();
 
-  // Measure rendered widths of center-position labels for accurate edge anchoring
+  // Measure rendered dimensions of center-position labels for edge anchoring and hit areas
   // Only recalculates when center label text changes
   const centerLabelKey = nodes
     .filter(n => n.labelPosition === 'center')
     .map(n => `${n.id}:${n.label}`)
     .join(',');
-  const centerLabelWidths = useMemo(() => {
-    const widths = new Map<string, number>();
-    if (typeof document === 'undefined') return widths;
+  const centerLabelDims = useMemo(() => {
+    const dims = new Map<string, { w: number; h: number }>();
+    if (typeof document === 'undefined') return dims;
     const el = document.createElement('div');
     el.style.cssText = 'position:fixed;visibility:hidden;white-space:nowrap;font-size:14px;padding:1px 3px;';
     document.body.appendChild(el);
     for (const node of nodes) {
       if (node.labelPosition === 'center' && node.label) {
         try {
-          el.innerHTML = katex.renderToString(node.label, { throwOnError: false, displayMode: false });
-          widths.set(node.id, el.getBoundingClientRect().width);
+          // Preprocess \\ line breaks inside \text{} to \begin{array} for KaTeX
+          const processed = node.label.replace(/\\text\s*\{([^}]*)\}/g, (match: string, content: string) => {
+            if (!content.includes('\\\\')) return match;
+            const lines = content.split('\\\\').map((l: string) => '\\text{' + l.trim() + '}');
+            return '\\begin{array}{c}' + lines.join('\\\\') + '\\end{array}';
+          });
+          el.innerHTML = katex.renderToString(processed, { throwOnError: false, displayMode: false });
+          const rect = el.getBoundingClientRect();
+          dims.set(node.id, { w: rect.width, h: rect.height });
         } catch {
-          widths.set(node.id, 30);
+          dims.set(node.id, { w: 30, h: 30 });
         }
       }
     }
     document.body.removeChild(el);
-    return widths;
+    return dims;
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [centerLabelKey]);
 
@@ -338,18 +345,12 @@ export const TreeCanvas = forwardRef<TreeCanvasRef>(function TreeCanvas(_, ref) 
           let x1 = sourcePos.x, y1 = sourcePos.y, x2 = targetPos.x, y2 = targetPos.y;
           // Offset edges to center-label border so they converge at a single point
           if (sourceNode?.labelPosition === 'center') {
-            if (isHoriz) {
-              x1 += (centerLabelWidths.get(sourceNode.id) ?? 30) / 2;
-            } else {
-              y1 += 15;
-            }
+            const d = centerLabelDims.get(sourceNode.id) ?? { w: 30, h: 30 };
+            if (isHoriz) x1 += d.w / 2; else y1 += d.h / 2;
           }
           if (targetNode?.labelPosition === 'center') {
-            if (isHoriz) {
-              x2 -= (centerLabelWidths.get(targetNode.id) ?? 30) / 2;
-            } else {
-              y2 -= 15;
-            }
+            const d = centerLabelDims.get(targetNode.id) ?? { w: 30, h: 30 };
+            if (isHoriz) x2 -= d.w / 2; else y2 -= d.h / 2;
           }
 
           return (
@@ -381,7 +382,7 @@ export const TreeCanvas = forwardRef<TreeCanvasRef>(function TreeCanvas(_, ref) 
               isSelected={selectedId === node.id}
               onClick={() => handleNodeClick(node.id)}
               onDoubleClick={() => handleNodeDoubleClick(node.id)}
-              centerLabelWidth={centerLabelWidths.get(node.id)}
+              centerLabelDims={centerLabelDims.get(node.id)}
             />
           );
         })}

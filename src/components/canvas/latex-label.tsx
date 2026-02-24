@@ -33,19 +33,29 @@ export function LatexLabel({ text, x, y, position = 'above', labelOffset, viewX 
   const dist = position === 'center' ? 0 : (labelOffset ?? 20);
   const offset = { dx: dir.dx * dist, dy: dir.dy * dist, anchor: dir.anchor };
 
+  // Preprocess LaTeX: convert \\ line breaks inside \text{} to \begin{array} for KaTeX
+  const processedText = useMemo(() => {
+    if (!text) return text;
+    return text.replace(/\\text\s*\{([^}]*)\}/g, (match, content) => {
+      if (!content.includes('\\\\')) return match;
+      const lines = content.split('\\\\').map((l: string) => '\\text{' + l.trim() + '}');
+      return '\\begin{array}{c}' + lines.join('\\\\') + '\\end{array}';
+    });
+  }, [text]);
+
   // Render LaTeX, fallback to plain text if parsing fails
   const html = useMemo(() => {
-    if (!text) return '';
+    if (!processedText) return '';
 
     try {
-      return katex.renderToString(text, {
+      return katex.renderToString(processedText, {
         throwOnError: false,
         displayMode: false,
       });
     } catch {
-      return text;
+      return processedText;
     }
-  }, [text]);
+  }, [processedText]);
 
   if (!text) return null;
 
@@ -54,12 +64,15 @@ export function LatexLabel({ text, x, y, position = 'above', labelOffset, viewX 
   const transformedY = y * scale + viewY;
 
   // Calculate foreignObject position based on anchor
+  const foWidth = position === 'center' ? 200 : 80;
   const foX = offset.anchor === 'end' ? transformedX + offset.dx * scale - 80
             : offset.anchor === 'start' ? transformedX + offset.dx * scale
-            : transformedX + offset.dx * scale - 40;
-  // For left/right/center positions, center label vertically relative to node
+            : transformedX + offset.dx * scale - (foWidth / 2);
+  // For left/right positions, center label vertically relative to node
+  // For center position, use larger foreignObject to fit multiline content
+  const foHeight = position === 'center' ? 200 : 30;
   const foY = (position === 'left' || position === 'right' || position === 'center')
-            ? transformedY - 15 * scale
+            ? transformedY - (foHeight / 2) * scale
             : transformedY + offset.dy * scale - 10;
 
   // Scale font size with zoom
@@ -69,17 +82,17 @@ export function LatexLabel({ text, x, y, position = 'above', labelOffset, viewX 
   // Export will use these to recalculate position with scale=1, viewX=0, viewY=0
   const contentFoX = offset.anchor === 'end' ? x + offset.dx - 80
                    : offset.anchor === 'start' ? x + offset.dx
-                   : x + offset.dx - 40;
+                   : x + offset.dx - (foWidth / 2);
   const contentFoY = (position === 'left' || position === 'right' || position === 'center')
-                   ? y - 15
+                   ? y - foHeight / 2
                    : y + offset.dy - 10;
 
   return (
     <foreignObject
       x={foX}
       y={foY}
-      width={80}
-      height={30}
+      width={position === 'center' ? 200 : 80}
+      height={foHeight}
       style={{ overflow: 'visible', pointerEvents: 'none' }}
       data-original-text={text}
       data-text-align={offset.anchor === 'end' ? 'right' : offset.anchor === 'start' ? 'left' : 'center'}
@@ -93,6 +106,9 @@ export function LatexLabel({ text, x, y, position = 'above', labelOffset, viewX 
           position: 'relative',
           width: '100%',
           height: '100%',
+          display: position === 'center' ? 'flex' : undefined,
+          alignItems: position === 'center' ? 'center' : undefined,
+          justifyContent: position === 'center' ? 'center' : undefined,
         }}
       >
         <div
@@ -103,7 +119,7 @@ export function LatexLabel({ text, x, y, position = 'above', labelOffset, viewX 
                      : offset.anchor === 'start' ? 'left'
                      : 'center',
             whiteSpace: 'nowrap',
-            height: '100%',
+            height: position === 'center' ? 'auto' : '100%',
             display: 'flex',
             alignItems: (position === 'left' || position === 'right' || position === 'center') ? 'center' : 'flex-start',
             justifyContent: offset.anchor === 'end' ? 'flex-end'
