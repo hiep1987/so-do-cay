@@ -3,10 +3,12 @@
 
 const NS = 'http://www.w3.org/2000/svg';
 const FONT_STYLE = "font-family: 'Times New Roman', Times, serif; font-style: italic; font-size: 14px;";
+const FONT_STYLE_UPRIGHT = "font-family: 'Times New Roman', Times, serif; font-size: 14px;";
 const CHAR_WIDTH = 7; // approximate px per character at 14px
 
 type LatexToken =
   | { type: 'text'; value: string }
+  | { type: 'upright'; value: string }  // \text{} content — rendered non-italic
   | { type: 'frac'; num: string; den: string }
   | { type: 'overline'; value: string }
   | { type: 'bar'; value: string }
@@ -49,7 +51,7 @@ export function parseLatex(input: string): LatexToken[] {
         i = after;
       } else if (rest.startsWith('\\text')) {
         const [val, after] = braceContent(s, i + 5);
-        tokens.push({ type: 'text', value: val });
+        tokens.push({ type: 'upright', value: val });
         i = after;
       } else if (rest.startsWith('\\sqrt')) {
         const [val, after] = braceContent(s, i + 5);
@@ -88,7 +90,7 @@ function tokenWidth(tok: LatexToken): number {
   if (tok.type === 'frac') return Math.max(tok.num.length, tok.den.length) * CHAR_WIDTH + 4;
   if (tok.type === 'overline' || tok.type === 'bar') return tok.value.length * CHAR_WIDTH + 2;
   if (tok.type === 'sqrt') return tok.value.length * CHAR_WIDTH + 10;
-  return tok.value.length * CHAR_WIDTH;
+  return tok.value.length * CHAR_WIDTH; // text and upright
 }
 
 function makeText(doc: Document, x: number, y: number, content: string, extra?: Record<string, string>): SVGTextElement {
@@ -161,15 +163,18 @@ export function createSvgLabelElement(
   const tokens = parseLatex(latex);
   const anchor = getTextAnchor(labelPosition);
 
-  // Simple single text or bar: return a <text> with proper anchor
+  // Simple single text, upright, or bar: return a <text> with proper anchor
   if (tokens.length === 1) {
     const tok = tokens[0];
     let content = '';
+    let isUpright = false;
     if (tok.type === 'text') content = tok.value;
+    else if (tok.type === 'upright') { content = tok.value; isUpright = true; }
     else if (tok.type === 'bar') content = tok.value + '\u0304';
 
     if (content) {
       const t = makeText(doc, cx, cy, content, { 'text-anchor': anchor });
+      if (isUpright) t.setAttribute('style', FONT_STYLE_UPRIGHT);
       if (labelPosition === 'center') {
         t.setAttribute('paint-order', 'stroke');
         t.setAttribute('stroke', 'white');
@@ -190,8 +195,10 @@ export function createSvgLabelElement(
 
   for (const tok of tokens) {
     const x = startX + xOff;
-    if (tok.type === 'text') {
-      g.appendChild(makeText(doc, x, cy, tok.value));
+    if (tok.type === 'text' || tok.type === 'upright') {
+      const t = makeText(doc, x, cy, tok.value);
+      if (tok.type === 'upright') t.setAttribute('style', FONT_STYLE_UPRIGHT);
+      g.appendChild(t);
       xOff += tok.value.length * CHAR_WIDTH;
     } else if (tok.type === 'frac') {
       const fw = Math.max(tok.num.length, tok.den.length) * CHAR_WIDTH;
