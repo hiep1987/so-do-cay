@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Source_Code_Pro } from "next/font/google";
 import "./globals.css";
@@ -32,6 +33,20 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="vi" className="dark" suppressHydrationWarning>
+      <head>
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-YBC9S6B3D9"
+          strategy="afterInteractive"
+        />
+        <Script id="ga4-init" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-YBC9S6B3D9');
+          `}
+        </Script>
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${sourceCodePro.variable} antialiased bg-background text-foreground`}
       >
