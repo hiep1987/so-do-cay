@@ -21,9 +21,34 @@ const sourceCodePro = Source_Code_Pro({
   weight: ["400", "500", "600"],
 });
 
+const siteUrl = "https://math2app.com/so-do-cay";
+
 export const metadata: Metadata = {
-  title: "Tree Diagram Builder",
+  title: "Sơ đồ Cây – Tree Diagram Builder",
   description: "Web app vẽ sơ đồ cây xác suất, xuất TikZ/SVG/PNG",
+  metadataBase: new URL(siteUrl),
+  openGraph: {
+    title: "Sơ đồ Cây – Tree Diagram Builder",
+    description: "Web app vẽ sơ đồ cây xác suất, xuất TikZ/SVG/PNG",
+    url: siteUrl,
+    siteName: "Sơ đồ Cây",
+    images: [
+      {
+        url: "/og-thumbnail.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Sơ đồ Cây – Tree Diagram Builder",
+      },
+    ],
+    locale: "vi_VN",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Sơ đồ Cây – Tree Diagram Builder",
+    description: "Web app vẽ sơ đồ cây xác suất, xuất TikZ/SVG/PNG",
+    images: ["/og-thumbnail.jpg"],
+  },
 };
 
 export default function RootLayout({
